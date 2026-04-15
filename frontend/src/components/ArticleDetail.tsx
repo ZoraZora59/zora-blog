@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowLeft, Calendar, Eye, Tag, Share2, Heart } from 'lucide-react';
 
 interface ArticleDetailProps {
@@ -6,7 +5,7 @@ interface ArticleDetailProps {
   onBack: () => void;
 }
 
-export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
+export default function ArticleDetail({ id: _id, onBack }: ArticleDetailProps) {
   return (
     <div className="max-w-3xl mx-auto p-8 md:p-12 lg:p-16 bg-white min-h-full shadow-sm border-x border-gray-50">
       {/* Top Navigation */}

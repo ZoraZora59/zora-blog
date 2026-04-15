@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Save, Image as ImageIcon, Settings, Send, Bold, Italic, Underline, Link as LinkIcon, List, Quote } from 'lucide-react';
 
 interface ArticleEditorProps {

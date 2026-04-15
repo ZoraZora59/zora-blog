@@ -1,0 +1,17 @@
+{
+  "name": "zora-blog",
+  "private": true,
+  "version": "0.1.0",
+  "description": "程序员猫奴露营博客 — Tech-Outdoor Fusion",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "lint:frontend": "cd frontend && npm run lint:all",
+    "lint:backend": "cd backend && npm run lint:all",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "format": "cd frontend && npm run format && cd ../backend && npm run format",
+    "format:check": "cd frontend && npm run format:check && cd ../backend && npm run format:check"
+  }
+}

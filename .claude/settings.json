@@ -1,0 +1,32 @@
+{
+  "language": "chinese",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; if echo \"$f\" | grep -qE 'frontend/src/.*[.](ts|tsx)$'; then cd frontend && npx tsc --noEmit 2>&1 | tail -20 && npx eslint \"$f\" 2>&1 | tail -10; elif echo \"$f\" | grep -qE 'backend/src/.*[.](ts|tsx)$'; then if [ -f backend/package.json ]; then cd backend && npx tsc --noEmit 2>&1 | tail -20 && npx eslint \"$f\" 2>&1 | tail -10; fi; fi; }",
+            "timeout": 30,
+            "statusMessage": "类型检查 + ESLint..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit:*)",
+            "command": "failed=0; cd frontend && npx tsc --noEmit 2>&1 || failed=1; npx eslint src/ 2>&1 || failed=1; cd ..; if [ -f backend/package.json ]; then cd backend && npx tsc --noEmit 2>&1 || failed=1; npx eslint src/ 2>&1 || failed=1; fi; if [ $failed -ne 0 ]; then printf '{\"decision\":\"block\",\"reason\":\"TypeScript 类型检查或 ESLint 失败，请修复后再提交\"}'; fi",
+            "timeout": 90,
+            "statusMessage": "提交前检查（tsc + ESLint）..."
+          }
+        ]
+      }
+    ]
+  }
+}

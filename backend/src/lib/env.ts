@@ -1,0 +1,26 @@
+import dotenv from 'dotenv';
+
+dotenv.config({
+  path: '.env',
+  override: true,
+  quiet: true,
+});
+
+function getEnv(name: string, fallback?: string) {
+  const value = process.env[name] ?? fallback;
+
+  if (!value) {
+    throw new Error(`缺少环境变量: ${name}`);
+  }
+
+  return value;
+}
+
+export const env = {
+  nodeEnv: process.env.NODE_ENV ?? 'development',
+  port: Number(process.env.PORT ?? 3001),
+  databaseUrl: getEnv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/zora_blog?schema=public'),
+  jwtSecret: getEnv('JWT_SECRET', 'dev-jwt-secret-change-me-please'),
+  apiKeySalt: getEnv('API_KEY_SALT', 'dev-api-key-salt-change-me-please'),
+  seedAdminPassword: process.env.SEED_ADMIN_PASSWORD ?? 'admin123456',
+};

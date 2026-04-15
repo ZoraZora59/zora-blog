@@ -1,4 +1,3 @@
-import React from 'react';
 import { Compass, Settings, BookOpen, LogIn, Info } from 'lucide-react';
 
 interface SidebarProps {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Save, Image as ImageIcon, Type, Layout } from 'lucide-react';
 
 export default function Configuration() {

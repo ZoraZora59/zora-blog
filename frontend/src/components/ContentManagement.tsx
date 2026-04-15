@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus, Search, Filter, MoreVertical, Edit2, Trash2, Eye, FileText } from 'lucide-react';
 
 const mockArticles = [
