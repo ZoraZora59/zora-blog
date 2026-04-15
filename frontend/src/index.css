@@ -1,1 +1,102 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --color-primary: #002455;
+  --color-primary-light: #003580;
+  --color-secondary: #3f6653;
+  --color-secondary-light: #4d7d64;
+  --color-tertiary: #3f1d00;
+  --color-accent: #2563eb;
+  --color-success: #16a34a;
+  --color-warning: #ca8a04;
+  --color-error: #dc2626;
+  --color-info: #2563eb;
+  --color-surface: #f8faf9;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f1f5f4;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-foreground: #0f172a;
+  --color-muted: #475569;
+  --color-subtle: #94a3b8;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-surface: #0f1419;
+  --color-surface-raised: #1a2332;
+  --color-surface-sunken: #0a0f14;
+  --color-border: #2a3441;
+  --color-border-light: #1f2937;
+  --color-foreground: #e2e8f0;
+  --color-muted: #94a3b8;
+  --color-subtle: #64748b;
+}
+
+@theme {
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-light);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-light: var(--color-secondary-light);
+  --color-tertiary: var(--color-tertiary);
+  --color-accent: var(--color-accent);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-border: var(--color-border);
+  --color-border-light: var(--color-border-light);
+  --color-foreground: var(--color-foreground);
+  --color-muted: var(--color-muted);
+  --color-subtle: var(--color-subtle);
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-surface font-sans text-foreground transition-colors duration-300;
+}
+
+#root {
+  @apply min-h-screen;
+}
+
+.shiki-code pre {
+  margin: 0;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.shiki-code code {
+  display: block;
+  counter-reset: line;
+}
+
+.shiki-code .line {
+  display: block;
+  min-height: 1.625rem;
+  padding-left: 3rem;
+  position: relative;
+}
+
+.shiki-code .line::before {
+  content: counter(line);
+  counter-increment: line;
+  left: 0;
+  position: absolute;
+  text-align: right;
+  user-select: none;
+  width: 2rem;
+  color: var(--color-subtle);
+}

@@ -63,6 +63,10 @@ interface AdminArticleListOptions {
   order?: 'asc' | 'desc';
 }
 
+type AdjacentArticleRecord = Article & {
+  category: Category;
+};
+
 function serializeArticle(article: ArticleRecord) {
   return {
     id: article.id,
@@ -94,6 +98,27 @@ function serializeArticle(article: ArticleRecord) {
       displayName: article.author.displayName,
       avatar: article.author.avatar,
       role: article.author.role,
+    },
+  };
+}
+
+function serializeAdjacentArticle(article: AdjacentArticleRecord | null) {
+  if (!article) {
+    return null;
+  }
+
+  return {
+    id: article.id,
+    title: article.title,
+    slug: article.slug,
+    excerpt: article.excerpt,
+    coverImage: article.coverImage,
+    publishedAt: article.publishedAt,
+    category: {
+      id: article.category.id,
+      name: article.category.name,
+      slug: article.category.slug,
+      description: article.category.description,
     },
   };
 }
@@ -281,10 +306,45 @@ export async function getPublicArticleBySlug(slug: string) {
       },
     });
 
-    return serializeArticle({
-      ...(article as ArticleRecord),
-      viewCount: article.viewCount + 1,
-    });
+    const [previousArticle, nextArticle] = await Promise.all([
+      tx.article.findFirst({
+        where: {
+          status: ArticleStatus.PUBLISHED,
+          publishedAt: {
+            lt: article.publishedAt ?? new Date(),
+          },
+        },
+        include: {
+          category: true,
+        },
+        orderBy: {
+          publishedAt: 'desc',
+        },
+      }),
+      tx.article.findFirst({
+        where: {
+          status: ArticleStatus.PUBLISHED,
+          publishedAt: {
+            gt: article.publishedAt ?? new Date(0),
+          },
+        },
+        include: {
+          category: true,
+        },
+        orderBy: {
+          publishedAt: 'asc',
+        },
+      }),
+    ]);
+
+    return {
+      ...serializeArticle({
+        ...(article as ArticleRecord),
+        viewCount: article.viewCount + 1,
+      }),
+      previousArticle: serializeAdjacentArticle(previousArticle as AdjacentArticleRecord | null),
+      nextArticle: serializeAdjacentArticle(nextArticle as AdjacentArticleRecord | null),
+    };
   });
 }
 
