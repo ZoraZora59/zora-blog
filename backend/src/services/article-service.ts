@@ -4,7 +4,6 @@ import {
   type Article,
   type ArticleTag,
   type Category,
-  type TopicArticle,
 } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../lib/app-error.js';
@@ -31,7 +30,7 @@ type ArticleRecord = Article & {
     avatar: string | null;
     role: string | null;
   };
-  topicArticles?: TopicArticle[];
+  topicArticles?: { topicId: number }[];
 };
 
 export interface ArticleInput {
@@ -44,6 +43,7 @@ export interface ArticleInput {
   categoryId?: number;
   tagIds?: number[];
   tags?: string[];
+  topicIds?: number[];
 }
 
 interface ArticleListOptions {
@@ -61,6 +61,7 @@ interface AdminArticleListOptions {
   offset?: string;
   sort?: string;
   order?: 'asc' | 'desc';
+  search?: string;
 }
 
 type AdjacentArticleRecord = Article & {
@@ -99,6 +100,7 @@ function serializeArticle(article: ArticleRecord) {
       avatar: article.author.avatar,
       role: article.author.role,
     },
+    topicIds: article.topicArticles?.map((ta) => ta.topicId) ?? [],
   };
 }
 
@@ -213,6 +215,25 @@ async function connectArticleTags(tx: Prisma.TransactionClient, articleId: numbe
   });
 }
 
+async function connectArticleTopics(tx: Prisma.TransactionClient, articleId: number, topicIds: number[]) {
+  await tx.topicArticle.deleteMany({
+    where: { articleId },
+  });
+
+  if (topicIds.length === 0) {
+    return;
+  }
+
+  await tx.topicArticle.createMany({
+    data: topicIds.map((topicId, index) => ({
+      topicId,
+      articleId,
+      sortOrder: index,
+    })),
+    skipDuplicates: true,
+  });
+}
+
 const articleInclude = {
   category: true,
   articleTags: {
@@ -227,6 +248,11 @@ const articleInclude = {
       displayName: true,
       avatar: true,
       role: true,
+    },
+  },
+  topicArticles: {
+    select: {
+      topicId: true,
     },
   },
 } satisfies Prisma.ArticleInclude;
@@ -352,13 +378,23 @@ export async function listAdminArticles(options: AdminArticleListOptions) {
   const limit = Math.min(parseNumberParam(options.limit, 20, 1), 100);
   const offset = parseNumberParam(options.offset, 0, 0);
   const normalizedStatus = options.status?.toLowerCase();
+  const search = (options.search ?? '').trim();
 
-  const where: Prisma.ArticleWhereInput =
-    normalizedStatus && normalizedStatus !== 'all'
+  const where: Prisma.ArticleWhereInput = {
+    ...(normalizedStatus && normalizedStatus !== 'all'
+      ? { status: normalizeStatus(normalizedStatus) }
+      : {}),
+    ...(search
       ? {
-          status: normalizeStatus(normalizedStatus),
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { excerpt: { contains: search, mode: 'insensitive' } },
+            { content: { contains: search, mode: 'insensitive' } },
+            { category: { name: { contains: search, mode: 'insensitive' } } },
+          ],
         }
-      : {};
+      : {}),
+  };
 
   const [items, total] = await prisma.$transaction([
     prisma.article.findMany({
@@ -378,6 +414,25 @@ export async function listAdminArticles(options: AdminArticleListOptions) {
       offset,
       total,
     },
+  };
+}
+
+// 获取文章全局统计数据
+export async function getAdminArticleStats() {
+  const [total, published, drafts, viewsAgg] = await prisma.$transaction([
+    prisma.article.count(),
+    prisma.article.count({ where: { status: ArticleStatus.PUBLISHED } }),
+    prisma.article.count({ where: { status: ArticleStatus.DRAFT } }),
+    prisma.article.aggregate({
+      _sum: { viewCount: true },
+    }),
+  ]);
+
+  return {
+    total,
+    published,
+    drafts,
+    totalViews: viewsAgg._sum.viewCount ?? 0,
   };
 }
 
@@ -404,6 +459,7 @@ export async function createArticle(adminId: number, input: ArticleInput) {
   const status = normalizeStatus(input.status);
   const categoryId = await resolveCategoryId(input.categoryId);
   const tagIds = await resolveTagIds(input.tagIds, input.tags);
+  const topicIds = input.topicIds ?? [];
   const slug = await buildArticleSlug(title, input.slug);
 
   return prisma.$transaction(async (tx) => {
@@ -423,6 +479,7 @@ export async function createArticle(adminId: number, input: ArticleInput) {
     });
 
     await connectArticleTags(tx, article.id, tagIds);
+    await connectArticleTopics(tx, article.id, topicIds);
 
     const created = await tx.article.findUniqueOrThrow({
       where: { id: article.id },
@@ -451,6 +508,7 @@ export async function updateArticle(id: number, input: ArticleInput) {
   const status = normalizeStatus(input.status ?? existing.status.toLowerCase());
   const categoryId = await resolveCategoryId(input.categoryId ?? existing.categoryId);
   const tagIds = await resolveTagIds(input.tagIds, input.tags);
+  const topicIds = input.topicIds;
   const slug = await buildArticleSlug(title, input.slug ?? existing.slug, id);
 
   return prisma.$transaction(async (tx) => {
@@ -475,6 +533,10 @@ export async function updateArticle(id: number, input: ArticleInput) {
       where: { articleId: id },
     });
     await connectArticleTags(tx, id, tagIds);
+
+    if (topicIds !== undefined) {
+      await connectArticleTopics(tx, id, topicIds);
+    }
 
     const updated = await tx.article.findUniqueOrThrow({
       where: { id },

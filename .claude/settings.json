@@ -7,8 +7,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; if echo \"$f\" | grep -qE 'frontend/src/.*[.](ts|tsx)$'; then cd frontend && npx tsc --noEmit 2>&1 | tail -20 && npx eslint \"$f\" 2>&1 | tail -10; elif echo \"$f\" | grep -qE 'backend/src/.*[.](ts|tsx)$'; then if [ -f backend/package.json ]; then cd backend && npx tsc --noEmit 2>&1 | tail -20 && npx eslint \"$f\" 2>&1 | tail -10; fi; fi; }",
-            "timeout": 30,
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f || exit 0; [ -z \"$f\" ] && exit 0; if echo \"$f\" | grep -qE 'frontend/src/.*[.](ts|tsx)$'; then cd \"$CLAUDE_PROJECT_DIR/frontend\" || exit 0; npx tsc --noEmit 2>&1 | tail -20; npx eslint \"$f\" 2>&1 | tail -10; elif echo \"$f\" | grep -qE 'backend/src/.*[.](ts|tsx)$'; then [ -f \"$CLAUDE_PROJECT_DIR/backend/package.json\" ] || exit 0; cd \"$CLAUDE_PROJECT_DIR/backend\" || exit 0; npx tsc --noEmit 2>&1 | tail -20; npx eslint \"$f\" 2>&1 | tail -10; fi; exit 0; }",
+            "timeout": 90,
             "statusMessage": "类型检查 + ESLint..."
           }
         ]
@@ -20,9 +20,8 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git commit:*)",
-            "command": "failed=0; cd frontend && npx tsc --noEmit 2>&1 || failed=1; npx eslint src/ 2>&1 || failed=1; cd ..; if [ -f backend/package.json ]; then cd backend && npx tsc --noEmit 2>&1 || failed=1; npx eslint src/ 2>&1 || failed=1; fi; if [ $failed -ne 0 ]; then printf '{\"decision\":\"block\",\"reason\":\"TypeScript 类型检查或 ESLint 失败，请修复后再提交\"}'; fi",
-            "timeout": 90,
+            "command": "input=$(cat); cmd=$(printf '%s' \"$input\" | jq -r '.tool_input.command // \"\"'); case \"$cmd\" in *'git commit'*) ;; *) exit 0 ;; esac; failed=0; { cd \"$CLAUDE_PROJECT_DIR/frontend\" && npx tsc --noEmit >&2 && npx eslint src/ >&2; } || failed=1; if [ -f \"$CLAUDE_PROJECT_DIR/backend/package.json\" ]; then { cd \"$CLAUDE_PROJECT_DIR/backend\" && npx tsc --noEmit >&2 && npx eslint src/ >&2; } || failed=1; fi; if [ $failed -ne 0 ]; then echo 'TypeScript 类型检查或 ESLint 失败，请修复后再提交' >&2; exit 2; fi; exit 0",
+            "timeout": 180,
             "statusMessage": "提交前检查（tsc + ESLint）..."
           }
         ]

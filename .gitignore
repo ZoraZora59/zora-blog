@@ -19,6 +19,7 @@ target/
 .idea/
 .vscode/
 .claude/projects/
+.claude/settings.local.json
 *.swp
 *.swo
 *~
@@ -42,6 +43,7 @@ backend/uploads/*
 # Logs
 *.log
 logs/
+.playwright-cli/
 
 # Test & coverage
 coverage/
@@ -52,3 +54,4 @@ htmlcov/
 tmp/
 temp/
 *.tmp
+output/
