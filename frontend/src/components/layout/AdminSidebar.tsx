@@ -17,7 +17,7 @@ const navItems = [
   { label: 'Dashboard', to: '/admin', icon: LayoutDashboard, end: true },
   { label: '文章管理', to: '/admin/posts', icon: FileText },
   { label: '评论管理', to: '/admin/comments', icon: MessageSquare },
-  { label: '专题管理', to: '/admin/topics', icon: Sparkles, disabled: true },
+  { label: '专题管理', to: '/admin/topics', icon: Sparkles },
   { label: '系统设置', to: '/admin/settings', icon: Settings },
 ];
 
@@ -64,22 +64,6 @@ export default function AdminSidebar() {
       <nav className="flex flex-1 flex-col gap-1 px-3">
         {navItems.map((item) => {
           const Icon = item.icon;
-
-          if (item.disabled) {
-            return (
-              <span
-                className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-subtle"
-                key={item.to}
-                title="即将上线"
-              >
-                <Icon className="size-4" />
-                <span className="flex-1">{item.label}</span>
-                <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-[10px] uppercase tracking-wide text-subtle">
-                  Soon
-                </span>
-              </span>
-            );
-          }
 
           return (
             <NavLink

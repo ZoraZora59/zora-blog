@@ -35,7 +35,13 @@ import {
   type CommentModerateAction,
 } from '../services/comment-service.js';
 import { getDashboardStats } from '../services/dashboard-service.js';
-import { listAdminTopics } from '../services/topic-service.js';
+import {
+  createTopic,
+  deleteTopic,
+  getAdminTopicById,
+  listAdminTopics,
+  updateTopic,
+} from '../services/topic-service.js';
 import {
   getAdminSettings,
   updateAdminProfile,
@@ -278,6 +284,63 @@ adminRoutes.get('/tags', async (c) => {
 adminRoutes.get('/topics', async (c) => {
   const topics = await listAdminTopics();
   return success(c, topics);
+});
+
+adminRoutes.get('/topics/:id', async (c) => {
+  const id = parseIdParam(c.req.param('id'));
+  const topic = await getAdminTopicById(id);
+  return success(c, topic);
+});
+
+adminRoutes.post('/topics', async (c) => {
+  const body = await c.req.json<{
+    title?: string;
+    slug?: string;
+    description?: string | null;
+    coverImage?: string | null;
+    articleIds?: number[];
+  }>().catch(() => {
+    throw new AppError('请求体必须是 JSON');
+  });
+
+  const topic = await createTopic({
+    title: body.title,
+    slug: body.slug,
+    description: body.description,
+    coverImage: body.coverImage,
+    articleIds: body.articleIds,
+  });
+
+  return success(c, topic, '专题创建成功', 201);
+});
+
+adminRoutes.put('/topics/:id', async (c) => {
+  const id = parseIdParam(c.req.param('id'));
+  const body = await c.req.json<{
+    title?: string;
+    slug?: string;
+    description?: string | null;
+    coverImage?: string | null;
+    articleIds?: number[];
+  }>().catch(() => {
+    throw new AppError('请求体必须是 JSON');
+  });
+
+  const topic = await updateTopic(id, {
+    title: body.title,
+    slug: body.slug,
+    description: body.description,
+    coverImage: body.coverImage,
+    articleIds: body.articleIds,
+  });
+
+  return success(c, topic, '专题更新成功');
+});
+
+adminRoutes.delete('/topics/:id', async (c) => {
+  const id = parseIdParam(c.req.param('id'));
+  await deleteTopic(id);
+  return success(c, null, '专题删除成功');
 });
 
 adminRoutes.post('/tags', async (c) => {

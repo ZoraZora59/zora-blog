@@ -9,11 +9,14 @@ import ArticleDetailPage from '@/pages/ArticleDetail';
 import LoginPage from '@/pages/Login';
 import SearchPage from '@/pages/Search';
 import TopicsPage from '@/pages/Topics';
+import TopicDetailPage from '@/pages/TopicDetail';
 import AdminCommentsPage from '@/pages/admin/Comments';
 import AdminDashboardPage from '@/pages/admin/Dashboard';
 import AdminPostsPage from '@/pages/admin/Posts';
 import AdminPostEditorPage from '@/pages/admin/PostEditor';
 import AdminSettingsPage from '@/pages/admin/Settings';
+import AdminTopicsPage from '@/pages/admin/Topics';
+import AdminTopicEditorPage from '@/pages/admin/TopicEditor';
 
 function NotFoundPage() {
   return <Navigate to="/" replace />;
@@ -29,6 +32,7 @@ export default function App() {
               <Route index element={<Home />} />
               <Route path="/articles/:slug" element={<ArticleDetailPage />} />
               <Route path="/topics" element={<TopicsPage />} />
+              <Route path="/topics/:slug" element={<TopicDetailPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/search" element={<SearchPage />} />
             </Route>
@@ -39,6 +43,9 @@ export default function App() {
               <Route path="posts/new" element={<AdminPostEditorPage />} />
               <Route path="posts/:id/edit" element={<AdminPostEditorPage />} />
               <Route path="comments" element={<AdminCommentsPage />} />
+              <Route path="topics" element={<AdminTopicsPage />} />
+              <Route path="topics/new" element={<AdminTopicEditorPage />} />
+              <Route path="topics/:id/edit" element={<AdminTopicEditorPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
             <Route path="*" element={<NotFoundPage />} />

@@ -10,6 +10,7 @@ import {
 } from '../services/comment-service.js';
 import { getSitePublicInfo } from '../services/site-service.js';
 import { listPublicTags } from '../services/tag-service.js';
+import { getPublicTopicBySlug, listPublicTopics } from '../services/topic-service.js';
 
 export const publicRoutes = new Hono();
 
@@ -61,4 +62,14 @@ publicRoutes.get('/categories', async (c) => {
 publicRoutes.get('/tags', async (c) => {
   const tags = await listPublicTags();
   return success(c, tags);
+});
+
+publicRoutes.get('/topics', async (c) => {
+  const topics = await listPublicTopics();
+  return success(c, topics);
+});
+
+publicRoutes.get('/topics/:slug', async (c) => {
+  const topic = await getPublicTopicBySlug(c.req.param('slug'));
+  return success(c, topic);
 });

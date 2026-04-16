@@ -215,6 +215,35 @@ export interface TopicSummary {
   description: string | null;
   coverImage: string | null;
   articleCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopicArticle {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  coverImage: string | null;
+  publishedAt: string | null;
+  viewCount: number;
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+}
+
+export interface TopicDetail extends TopicSummary {
+  articles: TopicArticle[];
+}
+
+export interface TopicMutationInput {
+  title?: string;
+  slug?: string;
+  description?: string | null;
+  coverImage?: string | null;
+  articleIds?: number[];
 }
 
 export type CommentStatus = 'pending' | 'approved' | 'rejected';
@@ -486,6 +515,31 @@ export function listAdminTags() {
 
 export function listAdminTopics() {
   return request<TopicSummary[]>('/admin/topics');
+}
+
+export function getAdminTopic(id: number) {
+  return request<TopicDetail>(`/admin/topics/${id}`);
+}
+
+export function createAdminTopic(input: TopicMutationInput) {
+  return requestJson<TopicDetail>('/admin/topics', 'POST', input);
+}
+
+export function updateAdminTopic(id: number, input: TopicMutationInput) {
+  return requestJson<TopicDetail>(`/admin/topics/${id}`, 'PUT', input);
+}
+
+export function deleteAdminTopic(id: number) {
+  return requestJson<null>(`/admin/topics/${id}`, 'DELETE');
+}
+
+// ---- C 端专题接口 ----
+export function listTopics() {
+  return request<TopicSummary[]>('/topics');
+}
+
+export function getTopic(slug: string) {
+  return request<TopicDetail>(`/topics/${slug}`);
 }
 
 export function listAdminComments(params: AdminCommentListParams = {}) {
