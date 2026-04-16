@@ -23,14 +23,69 @@ import {
   createArticle,
   deleteArticle,
   getAdminArticleById,
+  getAdminArticleStats,
   listAdminArticles,
   updateArticle,
 } from '../services/article-service.js';
+import {
+  batchModerateComments,
+  deleteComment,
+  listAdminComments,
+  moderateComment,
+  type CommentModerateAction,
+} from '../services/comment-service.js';
+import { getDashboardStats } from '../services/dashboard-service.js';
+import { listAdminTopics } from '../services/topic-service.js';
+import {
+  getAdminSettings,
+  updateAdminProfile,
+  updateSiteSettings,
+} from '../services/site-service.js';
 import type { AppBindings } from '../lib/types.js';
 
 export const adminRoutes = new Hono<AppBindings>();
 
 adminRoutes.use('*', requireAuth);
+
+adminRoutes.get('/dashboard', async (c) => {
+  const stats = await getDashboardStats();
+  return success(c, stats);
+});
+
+adminRoutes.get('/settings', async (c) => {
+  const admin = c.get('admin');
+  const settings = await getAdminSettings(admin.id);
+  return success(c, settings);
+});
+
+adminRoutes.put('/settings', async (c) => {
+  const body = await c.req.json<{
+    siteTitle?: string;
+    siteDescription?: string | null;
+    logo?: string | null;
+    commentModerationEnabled?: boolean;
+  }>().catch(() => {
+    throw new AppError('请求体必须是 JSON');
+  });
+
+  const site = await updateSiteSettings(body);
+  return success(c, site, '站点设置已更新');
+});
+
+adminRoutes.put('/profile', async (c) => {
+  const admin = c.get('admin');
+  const body = await c.req.json<{
+    displayName?: string;
+    avatar?: string | null;
+    bio?: string | null;
+    role?: string | null;
+  }>().catch(() => {
+    throw new AppError('请求体必须是 JSON');
+  });
+
+  const updated = await updateAdminProfile(admin.id, body);
+  return success(c, updated, '个人资料已更新');
+});
 
 adminRoutes.get('/articles', async (c) => {
   const result = await listAdminArticles({
@@ -39,9 +94,15 @@ adminRoutes.get('/articles', async (c) => {
     order: parseOrder(c.req.query('order')),
     limit: c.req.query('limit'),
     offset: c.req.query('offset'),
+    search: c.req.query('search'),
   });
 
   return success(c, result);
+});
+
+adminRoutes.get('/articles/stats', async (c) => {
+  const stats = await getAdminArticleStats();
+  return success(c, stats);
 });
 
 adminRoutes.get('/articles/:id', async (c) => {
@@ -61,6 +122,7 @@ adminRoutes.post('/articles', async (c) => {
     categoryId?: number;
     tagIds?: number[];
     tags?: string[];
+    topicIds?: number[];
   }>().catch(() => {
     throw new AppError('请求体必须是 JSON');
   });
@@ -75,6 +137,7 @@ adminRoutes.post('/articles', async (c) => {
     categoryId: body.categoryId,
     tagIds: body.tagIds,
     tags: body.tags,
+    topicIds: body.topicIds,
   });
 
   return success(c, article, '文章创建成功', 201);
@@ -92,6 +155,7 @@ adminRoutes.put('/articles/:id', async (c) => {
     categoryId?: number;
     tagIds?: number[];
     tags?: string[];
+    topicIds?: number[];
   }>().catch(() => {
     throw new AppError('请求体必须是 JSON');
   });
@@ -106,6 +170,7 @@ adminRoutes.put('/articles/:id', async (c) => {
     categoryId: body.categoryId,
     tagIds: body.tagIds,
     tags: body.tags,
+    topicIds: body.topicIds,
   });
 
   return success(c, article, '文章更新成功');
@@ -115,6 +180,56 @@ adminRoutes.delete('/articles/:id', async (c) => {
   const id = parseIdParam(c.req.param('id'));
   await deleteArticle(id);
   return success(c, null, '文章删除成功');
+});
+
+function parseAction(value: unknown): CommentModerateAction {
+  if (value === 'approve' || value === 'reject') {
+    return value;
+  }
+  throw new AppError('操作类型不合法');
+}
+
+adminRoutes.get('/comments', async (c) => {
+  const result = await listAdminComments({
+    status: c.req.query('status'),
+    articleId: c.req.query('articleId'),
+    limit: c.req.query('limit'),
+    offset: c.req.query('offset'),
+    search: c.req.query('search'),
+  });
+  return success(c, result);
+});
+
+adminRoutes.put('/comments/batch', async (c) => {
+  const body = await c
+    .req.json<{ ids?: number[]; action?: string }>()
+    .catch(() => {
+      throw new AppError('请求体必须是 JSON');
+    });
+
+  const action = parseAction(body.action);
+  const result = await batchModerateComments(body.ids ?? [], action);
+  return success(c, result, '批量操作已完成');
+});
+
+adminRoutes.put('/comments/:id', async (c) => {
+  const id = parseIdParam(c.req.param('id'));
+  const body = await c
+    .req.json<{ action?: string }>()
+    .catch(() => {
+      throw new AppError('请求体必须是 JSON');
+    });
+
+  const action = parseAction(body.action);
+  const comment = await moderateComment(id, action);
+  const message = action === 'approve' ? '评论已通过' : '评论已拒绝';
+  return success(c, comment, message);
+});
+
+adminRoutes.delete('/comments/:id', async (c) => {
+  const id = parseIdParam(c.req.param('id'));
+  await deleteComment(id);
+  return success(c, null, '评论已删除');
 });
 
 adminRoutes.get('/categories', async (c) => {
@@ -158,6 +273,11 @@ adminRoutes.delete('/categories/:id', async (c) => {
 adminRoutes.get('/tags', async (c) => {
   const tags = await listAdminTags();
   return success(c, tags);
+});
+
+adminRoutes.get('/topics', async (c) => {
+  const topics = await listAdminTopics();
+  return success(c, topics);
 });
 
 adminRoutes.post('/tags', async (c) => {

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import CommentSection from '@/components/comments/CommentSection';
 import MarkdownArticle from '@/components/markdown/MarkdownArticle';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -207,6 +208,8 @@ export default function ArticleDetailPage() {
                   )}
                 </div>
               </section>
+
+              {article.slug ? <CommentSection slug={article.slug} /> : null}
             </article>
 
             <aside className="hidden lg:block">
