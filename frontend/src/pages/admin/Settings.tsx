@@ -38,6 +38,13 @@ interface SiteForm {
   siteTitle: string;
   siteDescription: string;
   logo: string;
+  slogan: string;
+  aboutContent: string;
+  skills: string;
+  githubUrl: string;
+  linkedinUrl: string;
+  instagramUrl: string;
+  email: string;
   commentModerationEnabled: boolean;
 }
 
@@ -55,6 +62,13 @@ function siteFromSettings(site: SiteSettings): SiteForm {
     siteTitle: site.siteTitle,
     siteDescription: site.siteDescription ?? '',
     logo: site.logo ?? '',
+    slogan: site.slogan ?? '',
+    aboutContent: site.aboutContent ?? '',
+    skills: site.skills.join(', '),
+    githubUrl: site.githubUrl ?? '',
+    linkedinUrl: site.linkedinUrl ?? '',
+    instagramUrl: site.instagramUrl ?? '',
+    email: site.email ?? '',
     commentModerationEnabled: site.commentModerationEnabled,
   };
 }
@@ -67,6 +81,13 @@ export default function AdminSettings() {
     siteTitle: '',
     siteDescription: '',
     logo: '',
+    slogan: '',
+    aboutContent: '',
+    skills: '',
+    githubUrl: '',
+    linkedinUrl: '',
+    instagramUrl: '',
+    email: '',
     commentModerationEnabled: true,
   });
   const [apiKeyPrefix, setApiKeyPrefix] = useState<string | null>(null);
@@ -157,6 +178,16 @@ export default function AdminSettings() {
         siteTitle: site.siteTitle.trim(),
         siteDescription: site.siteDescription.trim() || null,
         logo: site.logo.trim() || null,
+        slogan: site.slogan.trim() || null,
+        aboutContent: site.aboutContent.trim() || null,
+        skills: site.skills
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+        githubUrl: site.githubUrl.trim() || null,
+        linkedinUrl: site.linkedinUrl.trim() || null,
+        instagramUrl: site.instagramUrl.trim() || null,
+        email: site.email.trim() || null,
         commentModerationEnabled: site.commentModerationEnabled,
       });
       setSite(siteFromSettings(updated));
@@ -294,7 +325,7 @@ export default function AdminSettings() {
       <header className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-[0.24em] text-subtle">System Settings</p>
         <h1 className="font-heading text-3xl font-bold text-foreground">系统设置</h1>
-        <p className="text-sm text-muted">管理个人资料、博客元数据、评论策略和 CLI / AI 使用的 API Key。</p>
+        <p className="text-sm text-muted">管理个人资料、About 页面内容、RSS 展示信息、评论策略和 CLI / AI 使用的 API Key。</p>
       </header>
 
       {error ? (
@@ -424,6 +455,15 @@ export default function AdminSettings() {
               />
             </label>
 
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Slogan</span>
+              <Input
+                onChange={(event) => setSite((prev) => ({ ...prev, slogan: event.target.value }))}
+                placeholder="一句话概括博客和作者气质"
+                value={site.slogan}
+              />
+            </label>
+
             <div className="space-y-2 text-sm">
               <span className="font-medium text-foreground">博客 Logo</span>
               <div className="flex items-center gap-3">
@@ -470,6 +510,60 @@ export default function AdminSettings() {
                 ref={logoInputRef}
                 type="file"
               />
+            </div>
+
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">关于页正文（Markdown）</span>
+              <Textarea
+                onChange={(event) => setSite((prev) => ({ ...prev, aboutContent: event.target.value }))}
+                placeholder="支持标题、列表、图片等 Markdown 语法，会展示在 /about 页面。"
+                rows={10}
+                value={site.aboutContent}
+              />
+            </label>
+
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">技能 / 兴趣标签</span>
+              <Input
+                onChange={(event) => setSite((prev) => ({ ...prev, skills: event.target.value }))}
+                placeholder="TypeScript, React, 露营, 徒步, 猫咪"
+                value={site.skills}
+              />
+            </label>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">GitHub 链接</span>
+                <Input
+                  onChange={(event) => setSite((prev) => ({ ...prev, githubUrl: event.target.value }))}
+                  placeholder="https://github.com/your-name"
+                  value={site.githubUrl}
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">LinkedIn 链接</span>
+                <Input
+                  onChange={(event) => setSite((prev) => ({ ...prev, linkedinUrl: event.target.value }))}
+                  placeholder="https://www.linkedin.com/in/your-name"
+                  value={site.linkedinUrl}
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">Instagram 链接</span>
+                <Input
+                  onChange={(event) => setSite((prev) => ({ ...prev, instagramUrl: event.target.value }))}
+                  placeholder="https://www.instagram.com/your-name"
+                  value={site.instagramUrl}
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">公开邮箱</span>
+                <Input
+                  onChange={(event) => setSite((prev) => ({ ...prev, email: event.target.value }))}
+                  placeholder="hello@example.com"
+                  value={site.email}
+                />
+              </label>
             </div>
 
             <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-sunken/60 p-3">

@@ -23,4 +23,5 @@ export const env = {
   jwtSecret: getEnv('JWT_SECRET', 'dev-jwt-secret-change-me-please'),
   apiKeySalt: getEnv('API_KEY_SALT', 'dev-api-key-salt-change-me-please'),
   seedAdminPassword: process.env.SEED_ADMIN_PASSWORD ?? 'admin123456',
+  siteUrl: (process.env.SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
 };

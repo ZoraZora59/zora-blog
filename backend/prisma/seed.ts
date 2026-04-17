@@ -25,6 +25,53 @@ async function main() {
     },
   });
 
+  await prisma.siteSettings.upsert({
+    where: { id: 1 },
+    update: {
+      siteTitle: 'Zora Blog',
+      siteDescription: '技术、户外与生活记录',
+      slogan: '把工程经验和山野现场写成能反复参考的记录。',
+      aboutContent: `## 你好，我是 ZoraGK
+
+白天写代码，晚上看路线，周末去营地。
+
+我关心的事情很具体：
+
+- 产品体验能不能更顺
+- 工程实现能不能更稳
+- 户外装备在真实环境里到底好不好用
+
+这个博客会持续记录前端 / 后端实践、露营与徒步、装备体验，还有一些留给自己的现场笔记。`,
+      skills: ['TypeScript', 'React', 'Node.js', '露营', '徒步', '猫咪'],
+      githubUrl: 'https://github.com/',
+      linkedinUrl: 'https://www.linkedin.com/',
+      instagramUrl: 'https://www.instagram.com/',
+      email: 'hello@zora.blog',
+    },
+    create: {
+      id: 1,
+      siteTitle: 'Zora Blog',
+      siteDescription: '技术、户外与生活记录',
+      slogan: '把工程经验和山野现场写成能反复参考的记录。',
+      aboutContent: `## 你好，我是 ZoraGK
+
+白天写代码，晚上看路线，周末去营地。
+
+我关心的事情很具体：
+
+- 产品体验能不能更顺
+- 工程实现能不能更稳
+- 户外装备在真实环境里到底好不好用
+
+这个博客会持续记录前端 / 后端实践、露营与徒步、装备体验，还有一些留给自己的现场笔记。`,
+      skills: ['TypeScript', 'React', 'Node.js', '露营', '徒步', '猫咪'],
+      githubUrl: 'https://github.com/',
+      linkedinUrl: 'https://www.linkedin.com/',
+      instagramUrl: 'https://www.instagram.com/',
+      email: 'hello@zora.blog',
+    },
+  });
+
   const categories = await Promise.all([
     prisma.category.upsert({
       where: { slug: 'tech-blog' },
@@ -134,7 +181,7 @@ export const hello = 'zora-blog';
     skipDuplicates: true,
   });
 
-  console.log('Seed 完成');
+  console.warn('Seed 完成');
 }
 
 main()

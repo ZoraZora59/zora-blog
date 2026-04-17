@@ -18,7 +18,7 @@ import { useReadingProgress } from '@/hooks/useReadingProgress';
 import { useTheme } from '@/hooks/useTheme';
 import { extractTableOfContents } from '@/lib/markdown';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { resolveMediaUrl } from '@/lib/api';
+import { resolveMediaUrl, RSS_FEED_URL } from '@/lib/api';
 
 export default function ArticleDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -269,7 +269,9 @@ export default function ArticleDetailPage() {
                   </div>
                   <a
                     className="inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-sm font-medium text-primary transition-colors duration-150 hover:bg-white/90"
-                    href="/feed.xml"
+                    href={RSS_FEED_URL}
+                    rel="noreferrer"
+                    target="_blank"
                   >
                     订阅 RSS
                   </a>

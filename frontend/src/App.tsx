@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AdminLayout from '@/components/layout/AdminLayout';
 import CLayout from '@/components/layout/CLayout';
 import { AuthProvider } from '@/hooks/useAuth';
 import { ThemeProvider } from '@/hooks/useTheme';
+import { RSS_FEED_URL } from '@/lib/api';
 import Home from '@/pages/Home';
 import AboutPage from '@/pages/About';
 import ArticleDetailPage from '@/pages/ArticleDetail';
@@ -23,35 +25,62 @@ function NotFoundPage() {
 }
 
 export default function App() {
+  useEffect(() => {
+    let rssLink = document.head.querySelector<HTMLLinkElement>('link[data-zora-rss="true"]');
+
+    if (!rssLink) {
+      rssLink = document.createElement('link');
+      rssLink.dataset.zoraRss = 'true';
+      document.head.appendChild(rssLink);
+    }
+
+    rssLink.rel = 'alternate';
+    rssLink.type = 'application/rss+xml';
+    rssLink.title = 'Zora Blog RSS Feed';
+    rssLink.href = RSS_FEED_URL;
+  }, []);
+
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route element={<CLayout />}>
-              <Route index element={<Home />} />
-              <Route path="/articles/:slug" element={<ArticleDetailPage />} />
-              <Route path="/topics" element={<TopicsPage />} />
-              <Route path="/topics/:slug" element={<TopicDetailPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/search" element={<SearchPage />} />
-            </Route>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboardPage />} />
-              <Route path="posts" element={<AdminPostsPage />} />
-              <Route path="posts/new" element={<AdminPostEditorPage />} />
-              <Route path="posts/:id/edit" element={<AdminPostEditorPage />} />
-              <Route path="comments" element={<AdminCommentsPage />} />
-              <Route path="topics" element={<AdminTopicsPage />} />
-              <Route path="topics/new" element={<AdminTopicEditorPage />} />
-              <Route path="topics/:id/edit" element={<AdminTopicEditorPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
-            </Route>
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<CLayout />}>
+            <Route index element={<Home />} />
+            <Route path="/articles/:slug" element={<ArticleDetailPage />} />
+            <Route path="/topics" element={<TopicsPage />} />
+            <Route path="/topics/:slug" element={<TopicDetailPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/search" element={<SearchPage />} />
+          </Route>
+          <Route
+            path="/login"
+            element={(
+              <AuthProvider>
+                <LoginPage />
+              </AuthProvider>
+            )}
+          />
+          <Route
+            path="/admin"
+            element={(
+              <AuthProvider>
+                <AdminLayout />
+              </AuthProvider>
+            )}
+          >
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="posts" element={<AdminPostsPage />} />
+            <Route path="posts/new" element={<AdminPostEditorPage />} />
+            <Route path="posts/:id/edit" element={<AdminPostEditorPage />} />
+            <Route path="comments" element={<AdminCommentsPage />} />
+            <Route path="topics" element={<AdminTopicsPage />} />
+            <Route path="topics/new" element={<AdminTopicEditorPage />} />
+            <Route path="topics/:id/edit" element={<AdminTopicEditorPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
+          </Route>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }

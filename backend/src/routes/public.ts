@@ -8,6 +8,7 @@ import {
   listPublicCommentsByArticleSlug,
   submitArticleComment,
 } from '../services/comment-service.js';
+import { searchPublicArticles } from '../services/search-service.js';
 import { getSitePublicInfo } from '../services/site-service.js';
 import { listPublicTags } from '../services/tag-service.js';
 import { getPublicTopicBySlug, listPublicTopics } from '../services/topic-service.js';
@@ -17,6 +18,16 @@ export const publicRoutes = new Hono();
 publicRoutes.get('/site', async (c) => {
   const site = await getSitePublicInfo();
   return success(c, site);
+});
+
+publicRoutes.get('/search', async (c) => {
+  const result = await searchPublicArticles({
+    q: c.req.query('q'),
+    page: c.req.query('page'),
+    limit: c.req.query('limit'),
+  });
+
+  return success(c, result);
 });
 
 publicRoutes.get('/articles', async (c) => {

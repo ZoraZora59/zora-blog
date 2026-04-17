@@ -69,12 +69,31 @@ adminRoutes.put('/settings', async (c) => {
     siteTitle?: string;
     siteDescription?: string | null;
     logo?: string | null;
+    slogan?: string | null;
+    aboutContent?: string | null;
+    skills?: string[];
+    githubUrl?: string | null;
+    linkedinUrl?: string | null;
+    instagramUrl?: string | null;
+    email?: string | null;
     commentModerationEnabled?: boolean;
   }>().catch(() => {
     throw new AppError('请求体必须是 JSON');
   });
 
-  const site = await updateSiteSettings(body);
+  const site = await updateSiteSettings({
+    siteTitle: body.siteTitle,
+    siteDescription: body.siteDescription,
+    logo: body.logo,
+    slogan: body.slogan,
+    aboutContent: body.aboutContent,
+    skills: body.skills,
+    githubUrl: body.githubUrl,
+    linkedinUrl: body.linkedinUrl,
+    instagramUrl: body.instagramUrl,
+    email: body.email,
+    commentModerationEnabled: body.commentModerationEnabled,
+  });
   return success(c, site, '站点设置已更新');
 });
 

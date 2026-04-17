@@ -78,6 +78,7 @@ model Article {
   content       String
   excerpt       String?
   coverImage    String?
+  searchVector  Unsupported("tsvector")? @map("search_vector")
   status        ArticleStatus  @default(DRAFT)
   authorId      Int
   categoryId    Int
@@ -94,6 +95,7 @@ model Article {
 
   @@index([status, publishedAt])
   @@index([categoryId, status])
+  @@index([searchVector], map: "articles_search_vector_idx", type: Gin)
   @@map("articles")
 }
 
@@ -143,6 +145,13 @@ model SiteSettings {
   siteTitle                String   @default("Zora Blog")
   siteDescription          String?
   logo                     String?
+  slogan                   String?
+  aboutContent             String?
+  skills                   String[] @default([])
+  githubUrl                String?
+  linkedinUrl              String?
+  instagramUrl             String?
+  email                    String?
   commentModerationEnabled Boolean  @default(true)
   updatedAt                DateTime @updatedAt
   createdAt                DateTime @default(now())

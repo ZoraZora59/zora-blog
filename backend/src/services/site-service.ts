@@ -7,6 +7,21 @@ const DEFAULT_SETTINGS = {
   siteTitle: 'Zora Blog',
   siteDescription: '程序员猫奴露营博客',
   logo: null as string | null,
+  slogan: '在代码和山野之间来回穿梭，记录值得反复回看的现场经验。',
+  aboutContent: `## 关于我
+
+我是一个长期在工程现场与户外路线之间来回切换的开发者。
+
+- 写前端，也写后端
+- 关心体验，也关心可维护性
+- 喜欢把技术问题拆到足够清楚，再把它们做成稳定可交付的东西
+
+这里会持续记录技术实践、装备体验和山野现场。`,
+  skills: ['TypeScript', 'React', 'Node.js', '露营', '徒步', '猫咪'],
+  githubUrl: null as string | null,
+  linkedinUrl: null as string | null,
+  instagramUrl: null as string | null,
+  email: null as string | null,
   commentModerationEnabled: true,
 };
 
@@ -14,6 +29,13 @@ export interface SiteSettingsInput {
   siteTitle?: string;
   siteDescription?: string | null;
   logo?: string | null;
+  slogan?: string | null;
+  aboutContent?: string | null;
+  skills?: string[];
+  githubUrl?: string | null;
+  linkedinUrl?: string | null;
+  instagramUrl?: string | null;
+  email?: string | null;
   commentModerationEnabled?: boolean;
 }
 
@@ -39,6 +61,13 @@ async function ensureSiteSettings() {
       id: SITE_SETTINGS_ID,
       siteTitle: DEFAULT_SETTINGS.siteTitle,
       siteDescription: DEFAULT_SETTINGS.siteDescription,
+      slogan: DEFAULT_SETTINGS.slogan,
+      aboutContent: DEFAULT_SETTINGS.aboutContent,
+      skills: DEFAULT_SETTINGS.skills,
+      githubUrl: DEFAULT_SETTINGS.githubUrl,
+      linkedinUrl: DEFAULT_SETTINGS.linkedinUrl,
+      instagramUrl: DEFAULT_SETTINGS.instagramUrl,
+      email: DEFAULT_SETTINGS.email,
     },
   });
 }
@@ -48,6 +77,13 @@ function serializeSiteSettings(settings: Awaited<ReturnType<typeof ensureSiteSet
     siteTitle: settings.siteTitle,
     siteDescription: settings.siteDescription,
     logo: settings.logo,
+    slogan: settings.slogan,
+    aboutContent: settings.aboutContent,
+    skills: settings.skills,
+    githubUrl: settings.githubUrl,
+    linkedinUrl: settings.linkedinUrl,
+    instagramUrl: settings.instagramUrl,
+    email: settings.email,
     commentModerationEnabled: settings.commentModerationEnabled,
   };
 }
@@ -102,6 +138,9 @@ export async function getAdminSettings(adminId: number) {
 export async function updateSiteSettings(input: SiteSettingsInput) {
   await ensureSiteSettings();
 
+  const normalizedSkills =
+    input.skills?.map((item) => item.trim()).filter(Boolean).slice(0, 24) ?? undefined;
+
   const updated = await prisma.siteSettings.update({
     where: { id: SITE_SETTINGS_ID },
     data: {
@@ -110,6 +149,15 @@ export async function updateSiteSettings(input: SiteSettingsInput) {
         ? { siteDescription: input.siteDescription?.trim() || null }
         : {}),
       ...(input.logo !== undefined ? { logo: input.logo?.trim() || null } : {}),
+      ...(input.slogan !== undefined ? { slogan: input.slogan?.trim() || null } : {}),
+      ...(input.aboutContent !== undefined
+        ? { aboutContent: input.aboutContent?.trim() || null }
+        : {}),
+      ...(normalizedSkills !== undefined ? { skills: normalizedSkills } : {}),
+      ...(input.githubUrl !== undefined ? { githubUrl: input.githubUrl?.trim() || null } : {}),
+      ...(input.linkedinUrl !== undefined ? { linkedinUrl: input.linkedinUrl?.trim() || null } : {}),
+      ...(input.instagramUrl !== undefined ? { instagramUrl: input.instagramUrl?.trim() || null } : {}),
+      ...(input.email !== undefined ? { email: input.email?.trim() || null } : {}),
       ...(input.commentModerationEnabled !== undefined
         ? { commentModerationEnabled: input.commentModerationEnabled }
         : {}),
