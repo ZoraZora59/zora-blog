@@ -61,6 +61,7 @@
 }
 
 html {
+  @apply bg-surface transition-colors duration-300;
   scroll-behavior: smooth;
 }
 
@@ -69,7 +70,7 @@ body {
 }
 
 #root {
-  @apply min-h-screen;
+  @apply min-h-screen transition-colors duration-300;
 }
 
 .shiki-code pre {

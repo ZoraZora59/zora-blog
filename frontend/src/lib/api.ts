@@ -108,6 +108,13 @@ export interface SiteSettings {
   siteTitle: string;
   siteDescription: string | null;
   logo: string | null;
+  slogan: string | null;
+  aboutContent: string | null;
+  skills: string[];
+  githubUrl: string | null;
+  linkedinUrl: string | null;
+  instagramUrl: string | null;
+  email: string | null;
   commentModerationEnabled: boolean;
 }
 
@@ -119,6 +126,30 @@ export interface SitePublicInfo {
 export interface AdminSettingsResponse {
   site: SiteSettings;
   admin: AdminProfile | null;
+}
+
+export interface SearchResultItem {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  highlightedTitle: string;
+  highlightedExcerpt: string;
+  coverImage: string | null;
+  publishedAt: string | null;
+  viewCount: number;
+  rank: number;
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+}
+
+export interface SearchResult {
+  query: string;
+  items: SearchResultItem[];
+  pagination: Pagination;
 }
 
 export interface DashboardStats {
@@ -345,6 +376,7 @@ export const API_ORIGIN = (() => {
     return 'http://localhost:3001';
   }
 })();
+export const RSS_FEED_URL = new URL('/feed.xml', `${API_ORIGIN}/`).toString();
 
 type PrimitiveValue = string | number | boolean | undefined;
 type QueryParams = Record<string, PrimitiveValue> | ArticleListParams | AdminArticleListParams;
@@ -440,6 +472,10 @@ export function getTags() {
 
 export function getSiteInfo() {
   return request<SitePublicInfo>('/site');
+}
+
+export function searchArticles(params: { q?: string; page?: number; limit?: number }) {
+  return request<SearchResult>('/search', undefined, params);
 }
 
 // ---- 认证接口 ----

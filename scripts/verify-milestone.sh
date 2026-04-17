@@ -222,7 +222,9 @@ EOF
     note "检查 M6 扩展功能"
     require_path "$ROOT_DIR/frontend/src/pages/About.tsx" "frontend/src/pages/About.tsx"
     require_path "$ROOT_DIR/frontend/src/pages/Search.tsx" "frontend/src/pages/Search.tsx"
-    require_path "$ROOT_DIR/frontend/src/hooks/useTheme.ts" "frontend/src/hooks/useTheme.ts"
+    require_any_path "frontend/src/hooks/useTheme" \
+      "$ROOT_DIR/frontend/src/hooks/useTheme.ts" \
+      "$ROOT_DIR/frontend/src/hooks/useTheme.tsx"
 
     run_npm_script "$ROOT_DIR/frontend" "lint" "frontend lint"
     run_npm_script "$ROOT_DIR/frontend" "build" "frontend build"

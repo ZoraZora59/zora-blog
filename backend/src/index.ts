@@ -11,6 +11,7 @@ import { authRoutes } from './routes/auth.js';
 import { publicRoutes } from './routes/public.js';
 import { adminRoutes } from './routes/admin.js';
 import { ensureUploadsDir, uploadsDir, allowedMimeTypes } from './lib/uploads.js';
+import { getRssFeedXml } from './services/feed-service.js';
 
 const app = new Hono();
 
@@ -24,6 +25,17 @@ app.use('/api/*', cors({
 
 app.get('/', (c) => {
   return c.json({ message: 'Zora Blog API' });
+});
+
+app.get('/feed.xml', async () => {
+  const xml = await getRssFeedXml();
+
+  return new Response(xml, {
+    headers: {
+      'Content-Type': 'application/rss+xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=600',
+    },
+  });
 });
 
 app.get('/uploads/:filename', async (c) => {
