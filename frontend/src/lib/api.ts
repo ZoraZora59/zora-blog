@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'http://localhost:3001/api';
+const DEFAULT_API_BASE_URL = '/api';
 
 export class ApiError extends Error {
   readonly code: number;
@@ -373,25 +373,23 @@ export const API_ORIGIN = (() => {
   try {
     return new URL(API_BASE_URL).origin;
   } catch {
-    return 'http://localhost:3001';
+    return '';
   }
 })();
 type PrimitiveValue = string | number | boolean | undefined;
 type QueryParams = Record<string, PrimitiveValue> | ArticleListParams | AdminArticleListParams;
 
 function buildUrl(path: string, params?: QueryParams) {
-  const url = new URL(`${API_BASE_URL}${path}`);
-
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === undefined || value === '') {
-        return;
-      }
-      url.searchParams.set(key, String(value));
-    });
-  }
-
-  return url.toString();
+  const base = `${API_BASE_URL}${path}`;
+  if (!params) return base;
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      searchParams.set(key, String(value));
+    }
+  });
+  const qs = searchParams.toString();
+  return qs ? `${base}?${qs}` : base;
 }
 
 async function request<T>(path: string, init?: RequestInit, params?: QueryParams) {
@@ -432,15 +430,10 @@ function requestJson<T>(
 }
 
 export function resolveMediaUrl(value?: string | null) {
-  if (!value) {
-    return '';
-  }
-
-  if (/^https?:\/\//.test(value)) {
-    return value;
-  }
-
-  return new URL(value, `${API_ORIGIN}/`).toString();
+  if (!value) return '';
+  if (/^https?:\/\//.test(value)) return value;
+  if (API_ORIGIN) return new URL(value, `${API_ORIGIN}/`).toString();
+  return value;
 }
 
 // ---- C 端接口 ----

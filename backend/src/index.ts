@@ -15,8 +15,18 @@ import { ensureUploadsDir, uploadsDir, allowedMimeTypes } from './lib/uploads.js
 const app = new Hono();
 
 app.use('*', requestLogger);
+const corsOrigins = (() => {
+  const origins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  if (env.siteUrl && !env.siteUrl.includes('localhost')) {
+    origins.push(env.siteUrl);
+    const bare = env.siteUrl.replace('://www.', '://');
+    if (bare !== env.siteUrl) origins.push(bare);
+  }
+  return origins;
+})();
+
 app.use('/api/*', cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: corsOrigins,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
