@@ -39,15 +39,15 @@ check_requirements() {
   log "环境检查通过"
 }
 
-# 拉取最新代码
+# 拉取最新代码（首次自动 clone）
 pull_code() {
   log "拉取最新代码..."
   if [ -d "$REPO_DIR/.git" ]; then
     cd "$REPO_DIR"
     git pull origin master
   else
-    warn "代码仓库不存在，请先克隆项目"
-    exit 1
+    log "首次部署，克隆仓库..."
+    git clone https://github.com/ZoraZora59/zora-blog.git "$REPO_DIR"
   fi
 }
 
@@ -76,7 +76,7 @@ sync_code() {
 install_dependencies() {
   log "安装后端依赖..."
   cd "$BACKEND_DIR"
-  npm install --production
+  npm install   # 包含 devDependencies（构建需要 tsc/prisma 等）
 
   log "安装前端依赖..."
   cd "$FRONTEND_DIR"
