@@ -22,6 +22,8 @@ import {
   type AdminArticleStats,
   type ArticleSummary,
 } from '@/lib/api';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/hooks/useToast';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 
 type StatusFilter = 'all' | 'published' | 'draft';
@@ -36,6 +38,8 @@ const statusTabs: Array<{ value: StatusFilter; label: string }> = [
 
 export default function AdminPosts() {
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -115,7 +119,12 @@ export default function AdminPosts() {
     if (deletingId) {
       return;
     }
-    const confirmed = window.confirm(`确定要删除《${article.title}》吗？该操作不可撤销。`);
+    const confirmed = await confirm({
+      title: '删除文章',
+      description: `确定要删除《${article.title}》吗？该操作不可撤销。`,
+      confirmText: '删除',
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
@@ -125,9 +134,10 @@ export default function AdminPosts() {
     try {
       await deleteAdminArticle(article.id);
       setRefreshKey((prev) => prev + 1);
+      toast.success('文章已删除');
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '删除失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setDeletingId(null);
     }

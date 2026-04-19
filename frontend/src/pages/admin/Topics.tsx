@@ -16,10 +16,14 @@ import {
   resolveMediaUrl,
   type TopicSummary,
 } from '@/lib/api';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/hooks/useToast';
 import { formatDate, formatNumber } from '@/lib/utils';
 
 export default function AdminTopicsPage() {
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [topics, setTopics] = useState<TopicSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +64,12 @@ export default function AdminTopicsPage() {
     if (deletingId) {
       return;
     }
-    const confirmed = window.confirm(`确定要删除《${topic.title}》吗？该操作不可撤销。`);
+    const confirmed = await confirm({
+      title: '删除专题',
+      description: `确定要删除《${topic.title}》吗？该操作不可撤销。`,
+      confirmText: '删除',
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
@@ -70,9 +79,10 @@ export default function AdminTopicsPage() {
     try {
       await deleteAdminTopic(topic.id);
       setRefreshKey((prev) => prev + 1);
+      toast.success('专题已删除');
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '删除失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setDeletingId(null);
     }

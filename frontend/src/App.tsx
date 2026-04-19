@@ -3,7 +3,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AdminLayout from '@/components/layout/AdminLayout';
 import CLayout from '@/components/layout/CLayout';
 import { AuthProvider } from '@/hooks/useAuth';
+import { ConfirmProvider } from '@/hooks/useConfirm';
 import { ThemeProvider } from '@/hooks/useTheme';
+import { ToastProvider } from '@/hooks/useToast';
 import { RSS_FEED_URL } from '@/lib/api';
 import Home from '@/pages/Home';
 import AboutPage from '@/pages/About';
@@ -42,45 +44,49 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<CLayout />}>
-            <Route index element={<Home />} />
-            <Route path="/articles/:slug" element={<ArticleDetailPage />} />
-            <Route path="/topics" element={<TopicsPage />} />
-            <Route path="/topics/:slug" element={<TopicDetailPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/search" element={<SearchPage />} />
-          </Route>
-          <Route
-            path="/login"
-            element={(
-              <AuthProvider>
-                <LoginPage />
-              </AuthProvider>
-            )}
-          />
-          <Route
-            path="/admin"
-            element={(
-              <AuthProvider>
-                <AdminLayout />
-              </AuthProvider>
-            )}
-          >
-            <Route index element={<AdminDashboardPage />} />
-            <Route path="posts" element={<AdminPostsPage />} />
-            <Route path="posts/new" element={<AdminPostEditorPage />} />
-            <Route path="posts/:id/edit" element={<AdminPostEditorPage />} />
-            <Route path="comments" element={<AdminCommentsPage />} />
-            <Route path="topics" element={<AdminTopicsPage />} />
-            <Route path="topics/new" element={<AdminTopicEditorPage />} />
-            <Route path="topics/:id/edit" element={<AdminTopicEditorPage />} />
-            <Route path="settings" element={<AdminSettingsPage />} />
-          </Route>
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <ConfirmProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route element={<CLayout />}>
+                <Route index element={<Home />} />
+                <Route path="/articles/:slug" element={<ArticleDetailPage />} />
+                <Route path="/topics" element={<TopicsPage />} />
+                <Route path="/topics/:slug" element={<TopicDetailPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/search" element={<SearchPage />} />
+              </Route>
+              <Route
+                path="/login"
+                element={(
+                  <AuthProvider>
+                    <LoginPage />
+                  </AuthProvider>
+                )}
+              />
+              <Route
+                path="/admin"
+                element={(
+                  <AuthProvider>
+                    <AdminLayout />
+                  </AuthProvider>
+                )}
+              >
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="posts" element={<AdminPostsPage />} />
+                <Route path="posts/new" element={<AdminPostEditorPage />} />
+                <Route path="posts/:id/edit" element={<AdminPostEditorPage />} />
+                <Route path="comments" element={<AdminCommentsPage />} />
+                <Route path="topics" element={<AdminTopicsPage />} />
+                <Route path="topics/new" element={<AdminTopicEditorPage />} />
+                <Route path="topics/:id/edit" element={<AdminTopicEditorPage />} />
+                <Route path="settings" element={<AdminSettingsPage />} />
+              </Route>
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </BrowserRouter>
+        </ConfirmProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

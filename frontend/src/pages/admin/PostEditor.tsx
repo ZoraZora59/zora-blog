@@ -15,7 +15,9 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { Input, Textarea } from '@/components/ui/Input';
+import { useConfirm } from '@/hooks/useConfirm';
 import { useTheme } from '@/hooks/useTheme';
+import { useToast } from '@/hooks/useToast';
 import {
   ApiError,
   createAdminArticle,
@@ -102,6 +104,8 @@ export default function PostEditor() {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { resolvedTheme } = useTheme();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const articleId = useMemo(() => {
     if (!params.id) {
@@ -329,7 +333,7 @@ export default function PostEditor() {
 
   const handlePreview = () => {
     if (!loadedArticle) {
-      window.alert('请先保存草稿后再预览');
+      toast.warning('请先保存草稿后再预览');
       return;
     }
     window.open(`/articles/${loadedArticle.slug}`, '_blank', 'noreferrer');
@@ -339,16 +343,22 @@ export default function PostEditor() {
     if (!articleId) {
       return;
     }
-    const confirmed = window.confirm('确定删除这篇文章？该操作不可撤销。');
+    const confirmed = await confirm({
+      title: '删除文章',
+      description: '确定删除这篇文章？该操作不可撤销。',
+      confirmText: '删除',
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
     try {
       await deleteAdminArticle(articleId);
+      toast.success('文章已删除');
       navigate('/admin/posts', { replace: true });
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '删除失败';
-      window.alert(message);
+      toast.error(message);
     }
   };
 
@@ -364,7 +374,7 @@ export default function PostEditor() {
       setDraft((prev) => ({ ...prev, coverImage: result.url }));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '上传失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

@@ -15,6 +15,8 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/hooks/useToast';
 import {
   ApiError,
   batchModerateComments,
@@ -67,6 +69,8 @@ export default function AdminComments() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [stats, setStats] = useState<AdminCommentStats | null>(null);
   const [articleRefs, setArticleRefs] = useState<AdminCommentArticleRef[]>([]);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   useEffect(() => {
     let cancelled = false;
@@ -177,9 +181,10 @@ export default function AdminComments() {
     try {
       await moderateComment(id, action);
       setRefreshKey((prev) => prev + 1);
+      toast.success(action === 'approve' ? '评论已通过' : '评论已拒绝');
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '操作失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setPendingActionId(null);
     }
@@ -189,9 +194,12 @@ export default function AdminComments() {
     if (pendingActionId) {
       return;
     }
-    const confirmed = window.confirm(
-      `确定要删除 ${comment.nickname} 的评论吗？该操作不可撤销。`,
-    );
+    const confirmed = await confirm({
+      title: '删除评论',
+      description: `确定要删除 ${comment.nickname} 的评论吗？该操作不可撤销。`,
+      confirmText: '删除',
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
@@ -199,9 +207,10 @@ export default function AdminComments() {
     try {
       await deleteAdminComment(comment.id);
       setRefreshKey((prev) => prev + 1);
+      toast.success('评论已删除');
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '删除失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setPendingActionId(null);
     }
@@ -216,9 +225,10 @@ export default function AdminComments() {
     try {
       await batchModerateComments(ids, action);
       setRefreshKey((prev) => prev + 1);
+      toast.success(action === 'approve' ? `已通过 ${ids.length} 条评论` : `已拒绝 ${ids.length} 条评论`);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '批量操作失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setBatchWorking(false);
     }

@@ -7,9 +7,27 @@ import {
   Loader2,
   Save,
   Trash2,
+  Search,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -26,8 +44,14 @@ import {
   type ArticleSummary,
   type TopicDetail,
   type TopicMutationInput,
+  type TopicArticle,
 } from '@/lib/api';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/hooks/useToast';
 import { formatDate } from '@/lib/utils';
+
+// 已选中文章的数据结构（来自专题详情接口）
+type SelectedArticle = TopicArticle;
 
 interface EditorDraft {
   title: string;
@@ -65,9 +89,97 @@ function buildMutationInput(draft: EditorDraft): TopicMutationInput {
   };
 }
 
+// 将 TopicDetail.articles 转换为 SelectedArticle 格式
+function articlesFromTopic(topic: TopicDetail): SelectedArticle[] {
+  return topic.articles;
+}
+
+// 将 ArticleSummary 转换为 SelectedArticle 格式（添加文章时使用）
+function articleToSelected(article: ArticleSummary): SelectedArticle {
+  return {
+    id: article.id,
+    title: article.title,
+    slug: article.slug,
+    excerpt: article.excerpt,
+    coverImage: article.coverImage,
+    publishedAt: article.publishedAt,
+    viewCount: article.viewCount,
+    category: article.category,
+  };
+}
+
+// 可排序的文章项组件
+interface SortableArticleItemProps {
+  article: SelectedArticle;
+  index: number;
+  totalCount: number;
+  onMove: (index: number, direction: 'up' | 'down') => void;
+  onRemove: (articleId: number) => void;
+}
+
+function SortableArticleItem({ article, index, totalCount, onMove, onRemove }: SortableArticleItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: article.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-lg border border-border/60 bg-surface-sunken p-3 ${isDragging ? 'shadow-lg' : ''}`}
+      ref={setNodeRef}
+      style={style}
+    >
+      <button
+        className="cursor-grab touch-none text-subtle hover:text-foreground"
+        {...attributes}
+        {...listeners}
+        type="button"
+      >
+        <GripVertical className="size-4 shrink-0" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">{article.title}</p>
+        <p className="text-xs text-subtle">{article.category.name}</p>
+      </div>
+      <div className="flex items-center gap-1">
+        <button
+          className="inline-flex size-7 items-center justify-center rounded-full text-muted hover:bg-surface-raised hover:text-foreground disabled:opacity-30"
+          disabled={index === 0}
+          onClick={() => onMove(index, 'up')}
+          type="button"
+        >
+          <ArrowUp className="size-3.5" />
+        </button>
+        <button
+          className="inline-flex size-7 items-center justify-center rounded-full text-muted hover:bg-surface-raised hover:text-foreground disabled:opacity-30"
+          disabled={index === totalCount - 1}
+          onClick={() => onMove(index, 'down')}
+          type="button"
+        >
+          <ArrowDown className="size-3.5" />
+        </button>
+        <button
+          className="inline-flex size-7 items-center justify-center rounded-full text-muted hover:bg-error/10 hover:text-error"
+          onClick={() => onRemove(article.id)}
+          type="button"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function TopicEditorPage() {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const topicId = useMemo(() => {
     if (!params.id) {
@@ -81,16 +193,36 @@ export default function TopicEditorPage() {
 
   const [draft, setDraft] = useState<EditorDraft>(EMPTY_DRAFT);
   const [baseline, setBaseline] = useState<EditorDraft>(EMPTY_DRAFT);
-  const [articles, setArticles] = useState<ArticleSummary[]>([]);
+  // 已选中文章的完整数据（来自专题详情接口，作为左侧列表的数据源）
+  const [selectedArticlesData, setSelectedArticlesData] = useState<SelectedArticle[]>([]);
+  // 候选文章列表（右侧，用于搜索和添加）
+  const [candidateArticles, setCandidateArticles] = useState<ArticleSummary[]>([]);
   const [isLoading, setIsLoading] = useState(isEdit);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const currentIdRef = useRef<number | null>(topicId);
   const draftRef = useRef<EditorDraft>(EMPTY_DRAFT);
   const baselineRef = useRef<EditorDraft>(EMPTY_DRAFT);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // 拖拽传感器配置
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   useEffect(() => {
     draftRef.current = draft;
@@ -100,29 +232,59 @@ export default function TopicEditorPage() {
     baselineRef.current = baseline;
   }, [baseline]);
 
-  // 加载已发布文章列表（用于关联选择）
-  useEffect(() => {
-    let cancelled = false;
+  // 加载候选文章列表（右侧，支持搜索和分页）
+  const loadCandidateArticles = useCallback(async (search: string, pageNum: number, append: boolean = false) => {
+    const limit = 50;
+    const offset = pageNum * limit;
 
-    listAdminArticles({ status: 'published', limit: 200 })
-      .then((result) => {
-        if (cancelled) {
-          return;
-        }
-        setArticles(result.items);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) {
-          return;
-        }
-        const message = err instanceof ApiError ? err.message : '文章列表加载失败';
-        setError(message);
+    if (append) {
+      setIsLoadingMore(true);
+    }
+
+    try {
+      const result = await listAdminArticles({
+        status: 'published',
+        limit,
+        offset,
+        search: search || undefined,
       });
 
-    return () => {
-      cancelled = true;
-    };
+      if (append) {
+        setCandidateArticles((prev) => [...prev, ...result.items]);
+      } else {
+        setCandidateArticles(result.items);
+      }
+
+      setHasMore(result.items.length === limit);
+      setPage(pageNum);
+    } catch (err: unknown) {
+      const message = err instanceof ApiError ? err.message : '文章列表加载失败';
+      setError(message);
+    } finally {
+      setIsLoadingMore(false);
+    }
   }, []);
+
+  // 初始加载候选文章
+  useEffect(() => {
+    loadCandidateArticles('', 0);
+  }, [loadCandidateArticles]);
+
+  // 搜索防抖
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadCandidateArticles(searchQuery, 0);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, loadCandidateArticles]);
+
+  // 加载更多候选文章
+  const handleLoadMore = useCallback(() => {
+    if (!isLoadingMore && hasMore) {
+      loadCandidateArticles(searchQuery, page + 1, true);
+    }
+  }, [isLoadingMore, hasMore, searchQuery, page, loadCandidateArticles]);
 
   // 加载专题详情（编辑模式）
   useEffect(() => {
@@ -130,6 +292,7 @@ export default function TopicEditorPage() {
       currentIdRef.current = null;
       setDraft(EMPTY_DRAFT);
       setBaseline(EMPTY_DRAFT);
+      setSelectedArticlesData([]);
       setIsLoading(false);
       return;
     }
@@ -146,6 +309,8 @@ export default function TopicEditorPage() {
         const next = draftFromTopic(topic);
         setDraft(next);
         setBaseline(next);
+        // 从专题详情接口获取已关联文章的完整数据
+        setSelectedArticlesData(articlesFromTopic(topic));
         setError(null);
         setLastSavedAt(new Date(topic.updatedAt));
       })
@@ -190,6 +355,8 @@ export default function TopicEditorPage() {
       const nextDraft = draftFromTopic(result);
       setDraft(nextDraft);
       setBaseline(nextDraft);
+      // 更新已选中文章数据（从保存结果获取）
+      setSelectedArticlesData(articlesFromTopic(result));
       setLastSavedAt(new Date(result.updatedAt));
       setError(null);
 
@@ -233,16 +400,22 @@ export default function TopicEditorPage() {
     if (!topicId) {
       return;
     }
-    const confirmed = window.confirm('确定删除这个专题？该操作不可撤销。');
+    const confirmed = await confirm({
+      title: '删除专题',
+      description: '确定删除这个专题？该操作不可撤销。',
+      confirmText: '删除',
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
     try {
       await deleteAdminTopic(topicId);
+      toast.success('专题已删除');
       navigate('/admin/topics', { replace: true });
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '删除失败';
-      window.alert(message);
+      toast.error(message);
     }
   };
 
@@ -258,7 +431,7 @@ export default function TopicEditorPage() {
       setDraft((prev) => ({ ...prev, coverImage: result.url }));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '上传失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -267,7 +440,23 @@ export default function TopicEditorPage() {
     }
   };
 
-  // 文章排序操作
+  // 拖拽排序结束
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setDraft((prev) => {
+        const oldIndex = prev.articleIds.indexOf(Number(active.id));
+        const newIndex = prev.articleIds.indexOf(Number(over.id));
+        const newArticleIds = arrayMove(prev.articleIds, oldIndex, newIndex);
+        // 同步更新 selectedArticlesData 的顺序
+        setSelectedArticlesData((prevData) => arrayMove(prevData, oldIndex, newIndex));
+        return { ...prev, articleIds: newArticleIds };
+      });
+    }
+  };
+
+  // 文章排序操作（保留箭头按钮功能）
   const handleMoveArticle = (index: number, direction: 'up' | 'down') => {
     const newIds = [...draft.articleIds];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -276,30 +465,34 @@ export default function TopicEditorPage() {
     }
     [newIds[index], newIds[targetIndex]] = [newIds[targetIndex], newIds[index]];
     handleChange('articleIds', newIds);
+    // 同步更新 selectedArticlesData 的顺序
+    setSelectedArticlesData((prevData) => {
+      const newData = [...prevData];
+      [newData[index], newData[targetIndex]] = [newData[targetIndex], newData[index]];
+      return newData;
+    });
   };
 
   const handleRemoveArticle = (articleId: number) => {
     handleChange('articleIds', draft.articleIds.filter((id) => id !== articleId));
+    // 同步更新 selectedArticlesData
+    setSelectedArticlesData((prevData) => prevData.filter((a) => a.id !== articleId));
   };
 
-  const handleAddArticle = (articleId: number) => {
-    if (draft.articleIds.includes(articleId)) {
+  const handleAddArticle = (article: ArticleSummary) => {
+    if (draft.articleIds.includes(article.id)) {
       return;
     }
-    handleChange('articleIds', [...draft.articleIds, articleId]);
+    handleChange('articleIds', [...draft.articleIds, article.id]);
+    // 同步添加到 selectedArticlesData（转换为 SelectedArticle 格式）
+    setSelectedArticlesData((prevData) => [...prevData, articleToSelected(article)]);
   };
 
-  // 已选中的文章列表（按顺序）
-  const selectedArticles = useMemo(() => {
-    return draft.articleIds
-      .map((id) => articles.find((a) => a.id === id))
-      .filter(Boolean) as ArticleSummary[];
-  }, [articles, draft.articleIds]);
-
-  // 未选中的文章列表
+  // 未选中的文章列表（支持搜索过滤）
   const availableArticles = useMemo(() => {
-    return articles.filter((a) => !draft.articleIds.includes(a.id));
-  }, [articles, draft.articleIds]);
+    const selectedIds = new Set(draft.articleIds);
+    return candidateArticles.filter((a) => !selectedIds.has(a.id));
+  }, [candidateArticles, draft.articleIds]);
 
   const autoSaveLabel = useMemo(() => {
     if (lastSavedAt) {
@@ -383,52 +576,36 @@ export default function TopicEditorPage() {
 
           <Card className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">关联文章 ({selectedArticles.length})</h3>
+              <h3 className="text-sm font-semibold text-foreground">关联文章 ({selectedArticlesData.length})</h3>
               <p className="text-xs text-subtle">拖拽或使用箭头调整顺序</p>
             </div>
 
-            {selectedArticles.length === 0 ? (
+            {selectedArticlesData.length === 0 ? (
               <p className="text-sm text-subtle">暂未关联文章，从右侧选择添加。</p>
             ) : (
-              <div className="space-y-2">
-                {selectedArticles.map((article, index) => (
-                  <div
-                    className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface-sunken p-3"
-                    key={article.id}
-                  >
-                    <GripVertical className="size-4 shrink-0 text-subtle" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{article.title}</p>
-                      <p className="text-xs text-subtle">{article.category.name}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="inline-flex size-7 items-center justify-center rounded-full text-muted hover:bg-surface-raised hover:text-foreground disabled:opacity-30"
-                        disabled={index === 0}
-                        onClick={() => handleMoveArticle(index, 'up')}
-                        type="button"
-                      >
-                        <ArrowUp className="size-3.5" />
-                      </button>
-                      <button
-                        className="inline-flex size-7 items-center justify-center rounded-full text-muted hover:bg-surface-raised hover:text-foreground disabled:opacity-30"
-                        disabled={index === selectedArticles.length - 1}
-                        onClick={() => handleMoveArticle(index, 'down')}
-                        type="button"
-                      >
-                        <ArrowDown className="size-3.5" />
-                      </button>
-                      <button
-                        className="inline-flex size-7 items-center justify-center rounded-full text-muted hover:bg-error/10 hover:text-error"
-                        onClick={() => handleRemoveArticle(article.id)}
-                        type="button"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
+              <DndContext
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+                sensors={sensors}
+              >
+                <SortableContext
+                  items={selectedArticlesData.map((a) => a.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {selectedArticlesData.map((article, index) => (
+                      <SortableArticleItem
+                        article={article}
+                        index={index}
+                        key={article.id}
+                        onMove={handleMoveArticle}
+                        onRemove={handleRemoveArticle}
+                        totalCount={selectedArticlesData.length}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
           </Card>
         </div>
@@ -488,9 +665,20 @@ export default function TopicEditorPage() {
 
           <Card className="space-y-3">
             <h3 className="text-sm font-semibold text-foreground">添加文章</h3>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
+              <input
+                className="w-full rounded-lg border border-border bg-surface-sunken py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-subtle focus:border-primary focus:outline-none"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索文章标题..."
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+              />
+            </div>
             {availableArticles.length === 0 ? (
               <p className="text-xs text-subtle">
-                {articles.length === 0 ? '暂无已发布文章' : '所有文章已添加'}
+                {candidateArticles.length === 0 ? '暂无已发布文章' : searchQuery ? '未找到匹配的文章' : '所有文章已添加'}
               </p>
             ) : (
               <div className="max-h-[400px] space-y-2 overflow-y-auto">
@@ -498,7 +686,7 @@ export default function TopicEditorPage() {
                   <button
                     className="flex w-full items-center gap-3 rounded-lg border border-border/40 bg-surface-sunken p-3 text-left transition-colors hover:border-border hover:bg-surface-raised"
                     key={article.id}
-                    onClick={() => handleAddArticle(article.id)}
+                    onClick={() => handleAddArticle(article)}
                     type="button"
                   >
                     {article.coverImage ? (
@@ -519,6 +707,23 @@ export default function TopicEditorPage() {
                     </div>
                   </button>
                 ))}
+                {hasMore && (
+                  <button
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-border/40 bg-surface-sunken p-3 text-sm text-muted transition-colors hover:bg-surface-raised disabled:opacity-50"
+                    disabled={isLoadingMore}
+                    onClick={handleLoadMore}
+                    type="button"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        加载中...
+                      </>
+                    ) : (
+                      '加载更多'
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </Card>

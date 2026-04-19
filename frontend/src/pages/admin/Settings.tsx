@@ -14,6 +14,8 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { Input, Textarea } from '@/components/ui/Input';
 import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/hooks/useToast';
 import {
   ApiError,
   generateApiKey,
@@ -75,6 +77,8 @@ function siteFromSettings(site: SiteSettings): SiteForm {
 
 export default function AdminSettings() {
   const { setAdmin } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [profile, setProfile] = useState<ProfileForm>({ displayName: '', avatar: '', bio: '', role: '' });
   const [site, setSite] = useState<SiteForm>({
@@ -211,7 +215,7 @@ export default function AdminSettings() {
       setProfile((prev) => ({ ...prev, avatar: result.url }));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '上传失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setAvatarUploading(false);
       if (avatarInputRef.current) {
@@ -231,7 +235,7 @@ export default function AdminSettings() {
       setSite((prev) => ({ ...prev, logo: result.url }));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : '上传失败';
-      window.alert(message);
+      toast.error(message);
     } finally {
       setLogoUploading(false);
       if (logoInputRef.current) {
@@ -246,7 +250,12 @@ export default function AdminSettings() {
     }
 
     if (apiKeyPrefix) {
-      const confirmed = window.confirm('重新生成将使现有 API Key 立即失效，确定继续吗？');
+      const confirmed = await confirm({
+        title: '重新生成 API Key',
+        description: '重新生成将使现有 API Key 立即失效，确定继续吗？',
+        confirmText: '重新生成',
+        tone: 'danger',
+      });
       if (!confirmed) {
         return;
       }
@@ -273,7 +282,12 @@ export default function AdminSettings() {
     if (keyWorking) {
       return;
     }
-    const confirmed = window.confirm('吊销后对应 Key 将立即失效，是否继续？');
+    const confirmed = await confirm({
+      title: '吊销 API Key',
+      description: '吊销后对应 Key 将立即失效，是否继续？',
+      confirmText: '吊销',
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
@@ -304,7 +318,7 @@ export default function AdminSettings() {
       setKeyCopied(true);
       window.setTimeout(() => setKeyCopied(false), 2000);
     } catch {
-      window.alert('复制失败，请手动选中文本复制');
+      toast.error('复制失败，请手动选中文本复制');
     }
   };
 
