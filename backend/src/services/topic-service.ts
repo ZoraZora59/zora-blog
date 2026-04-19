@@ -82,23 +82,35 @@ async function buildTopicSlug(title: string, customSlug?: string, excludeId?: nu
 export async function listPublicTopics(): Promise<TopicSummary[]> {
   const topics = await prisma.topic.findMany({
     include: {
-      _count: {
-        select: { topicArticles: true },
+      topicArticles: {
+        include: {
+          article: {
+            select: { status: true },
+          },
+        },
       },
     },
     orderBy: { createdAt: 'desc' },
   });
 
-  return topics.map((topic) => ({
-    id: topic.id,
-    title: topic.title,
-    slug: topic.slug,
-    description: topic.description,
-    coverImage: topic.coverImage,
-    articleCount: topic._count.topicArticles,
-    createdAt: topic.createdAt.toISOString(),
-    updatedAt: topic.updatedAt.toISOString(),
-  }));
+  // 过滤只包含草稿文章的专题，只统计已发布文章
+  return topics
+    .map((topic) => {
+      const publishedCount = topic.topicArticles.filter(
+        (ta) => ta.article.status === ArticleStatus.PUBLISHED,
+      ).length;
+      return {
+        id: topic.id,
+        title: topic.title,
+        slug: topic.slug,
+        description: topic.description,
+        coverImage: topic.coverImage,
+        articleCount: publishedCount,
+        createdAt: topic.createdAt.toISOString(),
+        updatedAt: topic.updatedAt.toISOString(),
+      };
+    })
+    .filter((topic) => topic.articleCount > 0);
 }
 
 export async function getPublicTopicBySlug(slug: string): Promise<TopicDetail> {

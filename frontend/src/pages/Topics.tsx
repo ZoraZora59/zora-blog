@@ -69,6 +69,7 @@ export default function TopicsPage() {
                       <img
                         alt={topic.title}
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
                         referrerPolicy="no-referrer"
                         src={resolveMediaUrl(topic.coverImage)}
                       />

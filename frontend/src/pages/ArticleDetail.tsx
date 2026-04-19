@@ -3,22 +3,24 @@ import {
   ArrowRight,
   CalendarDays,
   Eye,
+  List,
   UserRound,
 } from 'lucide-react';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CommentSection from '@/components/comments/CommentSection';
 import MarkdownArticle from '@/components/markdown/MarkdownArticle';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import MobileTocDrawer from '@/components/ui/MobileTocDrawer';
 import { useActiveHeading } from '@/hooks/useActiveHeading';
 import { useArticle } from '@/hooks/useArticle';
 import { useReadingProgress } from '@/hooks/useReadingProgress';
 import { useTheme } from '@/hooks/useTheme';
 import { extractTableOfContents } from '@/lib/markdown';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { resolveMediaUrl, RSS_FEED_URL } from '@/lib/api';
+import { resolveMediaUrl } from '@/lib/api';
 
 export default function ArticleDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -31,6 +33,7 @@ export default function ArticleDetailPage() {
     [article],
   );
   const activeHeading = useActiveHeading(headings);
+  const [tocOpen, setTocOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -95,8 +98,25 @@ export default function ArticleDetailPage() {
               <Eye className="size-4" />
               {formatNumber(article.viewCount)} 阅读
             </span>
+            {headings.length > 0 ? (
+              <Button
+                aria-label="打开目录"
+                className="lg:hidden"
+                onClick={() => setTocOpen(true)}
+                variant="icon"
+              >
+                <List className="size-4" />
+              </Button>
+            ) : null}
           </div>
         </div>
+
+        <MobileTocDrawer
+          activeHeading={activeHeading}
+          headings={headings}
+          isOpen={tocOpen}
+          onClose={() => setTocOpen(false)}
+        />
 
         <div className="space-y-10">
           <header className="space-y-8">
@@ -145,6 +165,7 @@ export default function ArticleDetailPage() {
               <img
                 alt={article.title}
                 className="max-h-[540px] w-full object-cover"
+                loading="lazy"
                 referrerPolicy="no-referrer"
                 src={resolveMediaUrl(article.coverImage)}
               />
@@ -257,25 +278,6 @@ export default function ArticleDetailPage() {
                   </Card>
                 ) : null}
 
-                <Card className="space-y-4 bg-primary text-white shadow-md">
-                  <p className="text-xs font-medium uppercase tracking-[0.24em] text-white/60">
-                    JOIN THE EXPEDITION
-                  </p>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-heading font-bold">Dive into the next dispatch.</h3>
-                    <p className="text-sm leading-relaxed text-white/75">
-                      新文章会继续沿着技术与户外的交叉地带展开。
-                    </p>
-                  </div>
-                  <a
-                    className="inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-sm font-medium text-primary transition-colors duration-150 hover:bg-white/90"
-                    href={RSS_FEED_URL}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    订阅 RSS
-                  </a>
-                </Card>
               </div>
             </aside>
           </div>

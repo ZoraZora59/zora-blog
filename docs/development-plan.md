@@ -157,7 +157,7 @@ curl -H 'Authorization: Bearer zora_xxxx' localhost:3001/api/admin/articles
   - `ThemeToggle.tsx` — Dark Mode 切换按钮
 - [ ] 创建 `src/components/layout/` 布局组件：
   - `Navbar.tsx` — C端顶部导航栏（Glassmorphism、搜索入口、Dark Mode 切换）
-  - `Footer.tsx` — 底部（社交链接、RSS）
+  - `Footer.tsx` — 底部（社交链接）
   - `MobileNav.tsx` — 移动端底部导航
   - `CLayout.tsx` — C端统一布局（Navbar + main + Footer）
 
@@ -325,7 +325,7 @@ curl -H 'Authorization: Bearer zora_xxxx' localhost:3001/api/admin/articles
 
 ## M6 — 扩展功能
 
-> 目标：关于页、搜索、RSS、Dark Mode 全部就绪。
+> 目标：关于页、搜索、Dark Mode 全部就绪。
 
 ### M6.1 关于页 (About)
 
@@ -352,19 +352,7 @@ curl -H 'Authorization: Bearer zora_xxxx' localhost:3001/api/admin/articles
 
 **验收**：输入关键词 → 搜索结果正确返回并高亮 → 空结果有友好提示
 
-### M6.3 RSS 订阅
-
-- [ ] 后端：`GET /feed.xml`
-  - 生成标准 RSS 2.0 XML
-  - 包含最新 20 篇已发布文章
-  - 缓存 10 分钟
-- [ ] 前端：
-  - HTML `<head>` 添加 RSS 自动发现标签
-  - Footer 添加 RSS 图标链接
-
-**验收**：浏览器访问 `/feed.xml` 返回有效 XML，RSS 阅读器可订阅
-
-### M6.4 Dark Mode
+### M6.3 Dark Mode
 
 - [ ] 实现主题切换逻辑：
   - `src/hooks/useTheme.ts` — Light / Dark / System 三模式
@@ -406,18 +394,7 @@ curl -H 'Authorization: Bearer zora_xxxx' localhost:3001/api/admin/articles
 
 **验收**：动效流畅（60fps），不影响首屏加载性能
 
-### M7.3 SEO
-
-- [ ] 安装 `react-helmet-async`（或等效方案）
-- [ ] 每个 C 端页面设置 `<title>`、`<meta description>`
-- [ ] 文章详情页：Open Graph + Twitter Card meta 标签
-- [ ] 后端生成 `sitemap.xml`（所有已发布文章 + 专题 + 固定页面）
-- [ ] `robots.txt`
-- [ ] 语义化 HTML（`<article>`、`<nav>`、`<main>`、`<aside>`、`<header>`、`<footer>`）
-
-**验收**：使用在线 SEO 检测工具检查 meta 标签完整性
-
-### M7.4 性能优化
+### M7.3 性能优化
 
 - [ ] 图片懒加载（`loading="lazy"` 或 Intersection Observer）
 - [ ] 图片响应式（`srcset`）
@@ -427,7 +404,7 @@ curl -H 'Authorization: Bearer zora_xxxx' localhost:3001/api/admin/articles
 
 **验收**：Lighthouse Performance 评分 ≥ 90
 
-### M7.5 无障碍
+### M7.4 无障碍
 
 - [ ] 所有图片有 `alt`
 - [ ] 颜色对比度 WCAG AA（Light + Dark）
@@ -448,7 +425,6 @@ curl -H 'Authorization: Bearer zora_xxxx' localhost:3001/api/admin/articles
 - [ ] 后端以 Node.js 进程运行（使用 `pm2` 或 `systemd` 守护）
 - [ ] 前端构建为静态文件，Nginx 反向代理：
   - `/api/*` → 后端
-  - `/feed.xml` → 后端
   - `/uploads/*` → 本地文件
   - 其余 → 前端静态文件（SPA fallback `index.html`）
 - [ ] HTTPS（Let's Encrypt / Certbot）

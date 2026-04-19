@@ -157,42 +157,37 @@
 ## M6 — 扩展功能
 
 - PR 标题：`feat: M6 扩展功能`
-- 目标：关于页、搜索、RSS、Dark Mode 完成闭环。
+- 目标：关于页、搜索、Dark Mode 完成闭环。
 - 必交付：
   - `About`、`Search`
   - PostgreSQL 全文搜索
-  - `/feed.xml`
   - `useTheme` 和主题切换组件
 - 交付标准：
   - `/about` 展示后台配置内容
   - `/search?q=` 可搜索并高亮
-  - `/feed.xml` 返回有效 RSS
   - Light / Dark / System 三模式正常工作
 - 自动验证：
   - `./scripts/verify-milestone.sh M6`
   - 前后端 `lint/build`
 - 手动验证：
   - 搜索关键词命中和空状态
-  - RSS 阅读器或 XML 校验
   - 主题切换持久化
 - PR 证据：
-  - About、Search、RSS、Theme 切换截图
+  - About、Search、Theme 切换截图
 
 ## M7 — 打磨
 
 - PR 标题：`feat: M7 体验打磨`
-- 目标：移动端、动效、SEO、性能、无障碍收口。
+- 目标：移动端、动效、性能、无障碍收口。
 - 必交付：
   - 移动端布局和导航
   - 关键动效
-  - SEO 元信息和 sitemap/robots
   - 性能与无障碍优化
 - 交付标准：
   - 375px-768px 无明显溢出
   - 动效与 [`09-login-motion.png`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/stitch/09-login-motion.png)、[`10-home-transitions.png`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/stitch/10-home-transitions.png)、[`11-article-motion.png`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/stitch/11-article-motion.png) 的节奏一致
   - Lighthouse Performance >= 90
   - Lighthouse Accessibility >= 90
-  - 关键页面具备 SEO 元标签
 - 自动验证：
   - `./scripts/verify-milestone.sh M7`
   - 前后端 `lint/build`
@@ -223,7 +218,7 @@
   - CI workflow 配置检查
 - 手动验证：
   - 按部署文档走一遍
-  - 验证域名访问、API、静态资源、上传和 RSS
+  - 验证域名访问、API、静态资源、上传
 - PR 证据：
   - 部署文档
   - workflow 运行记录或部署日志摘要

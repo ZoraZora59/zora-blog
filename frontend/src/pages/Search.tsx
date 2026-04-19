@@ -299,6 +299,7 @@ export default function SearchPage() {
                       <img
                         alt={item.title}
                         className="aspect-[16/10] w-full object-cover"
+                        loading="lazy"
                         referrerPolicy="no-referrer"
                         src={
                           resolveMediaUrl(item.coverImage) ||

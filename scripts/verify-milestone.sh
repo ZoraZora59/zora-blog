@@ -238,7 +238,6 @@ EOF
     cat <<'EOF'
   - 检查 /about 数据展示
   - 检查 /search?q= 命中、高亮和空状态
-  - 检查 /feed.xml 是否返回有效 XML
   - 检查 Light / Dark / System 三种主题及 localStorage 持久化
 EOF
     ;;
@@ -274,7 +273,7 @@ EOF
     print_manual_header
     cat <<'EOF'
   - 按部署文档走一遍部署流程
-  - 检查域名访问、HTTPS、/api、/uploads、/feed.xml
+  - 检查域名访问、HTTPS、/api、/uploads
   - 检查数据库迁移、服务重启、日志和备份策略
   - 附 workflow 记录或部署日志摘要
 EOF

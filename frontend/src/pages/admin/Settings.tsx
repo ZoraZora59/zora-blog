@@ -339,7 +339,7 @@ export default function AdminSettings() {
       <header className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-[0.24em] text-subtle">System Settings</p>
         <h1 className="font-heading text-3xl font-bold text-foreground">系统设置</h1>
-        <p className="text-sm text-muted">管理个人资料、About 页面内容、RSS 展示信息、评论策略和 CLI / AI 使用的 API Key。</p>
+        <p className="text-sm text-muted">管理个人资料、About 页面内容、评论策略和 CLI / AI 使用的 API Key。</p>
       </header>
 
       {error ? (

@@ -216,22 +216,46 @@ async function connectArticleTags(tx: Prisma.TransactionClient, articleId: numbe
 }
 
 async function connectArticleTopics(tx: Prisma.TransactionClient, articleId: number, topicIds: number[]) {
-  await tx.topicArticle.deleteMany({
+  // 获取当前文章的所有专题关联
+  const existingRelations = await tx.topicArticle.findMany({
     where: { articleId },
+    select: { topicId: true, sortOrder: true },
   });
+  const existingTopicIds = new Set(existingRelations.map((r) => r.topicId));
+  const newTopicIds = new Set(topicIds);
 
-  if (topicIds.length === 0) {
-    return;
+  // 删除不再关联的专题
+  const toRemove = [...existingTopicIds].filter((id) => !newTopicIds.has(id));
+  if (toRemove.length > 0) {
+    await tx.topicArticle.deleteMany({
+      where: { articleId, topicId: { in: toRemove } },
+    });
   }
 
-  await tx.topicArticle.createMany({
-    data: topicIds.map((topicId, index) => ({
-      topicId,
-      articleId,
-      sortOrder: index,
-    })),
-    skipDuplicates: true,
-  });
+  // 新增关联：保持原有 sortOrder，新增的放在专题末尾
+  const toAdd = topicIds.filter((id) => !existingTopicIds.has(id));
+  if (toAdd.length > 0) {
+    // 获取每个专题的最大 sortOrder
+    const maxSortOrders = await Promise.all(
+      toAdd.map(async (topicId) => {
+        const maxSort = await tx.topicArticle.aggregate({
+          where: { topicId },
+          _max: { sortOrder: true },
+        });
+        return { topicId, maxSortOrder: (maxSort._max.sortOrder ?? -1) + 1 };
+      }),
+    );
+    const sortOrderMap = new Map(maxSortOrders.map((r) => [r.topicId, r.maxSortOrder]));
+
+    await tx.topicArticle.createMany({
+      data: toAdd.map((topicId) => ({
+        topicId,
+        articleId,
+        sortOrder: sortOrderMap.get(topicId) ?? 0,
+      })),
+      skipDuplicates: true,
+    });
+  }
 }
 
 const articleInclude = {

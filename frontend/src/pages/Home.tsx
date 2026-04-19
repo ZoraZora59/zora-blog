@@ -100,6 +100,7 @@ export default function Home() {
               <img
                 alt="Mountain workspace"
                 className="aspect-[4/4.6] w-full object-cover"
+                loading="eager"
                 referrerPolicy="no-referrer"
                 src={heroImages[0]}
               />
@@ -110,6 +111,7 @@ export default function Home() {
                   <img
                     alt="Outdoor snapshot"
                     className="aspect-[16/10] w-full object-cover"
+                    loading="lazy"
                     referrerPolicy="no-referrer"
                     src={image}
                   />

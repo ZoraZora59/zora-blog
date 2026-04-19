@@ -376,8 +376,6 @@ export const API_ORIGIN = (() => {
     return 'http://localhost:3001';
   }
 })();
-export const RSS_FEED_URL = new URL('/feed.xml', `${API_ORIGIN}/`).toString();
-
 type PrimitiveValue = string | number | boolean | undefined;
 type QueryParams = Record<string, PrimitiveValue> | ArticleListParams | AdminArticleListParams;
 

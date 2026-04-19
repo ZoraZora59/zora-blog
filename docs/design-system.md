@@ -447,7 +447,6 @@ B端侧边栏：
 | 太阳（Light Mode） | `Sun` | `import { Sun } from 'lucide-react'` |
 | 月亮（Dark Mode） | `Moon` | `import { Moon } from 'lucide-react'` |
 | 复制 | `Copy` / `Check` | 代码块复制按钮 |
-| RSS | `Rss` | Footer RSS 链接 |
 | 返回 | `ArrowLeft` | 文章详情返回 |
 | 外部链接 | `ExternalLink` | 社交链接 |
 | 评论 | `MessageCircle` | 评论区图标 |

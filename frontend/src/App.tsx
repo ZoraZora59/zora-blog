@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AdminLayout from '@/components/layout/AdminLayout';
 import CLayout from '@/components/layout/CLayout';
@@ -6,7 +5,6 @@ import { AuthProvider } from '@/hooks/useAuth';
 import { ConfirmProvider } from '@/hooks/useConfirm';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { ToastProvider } from '@/hooks/useToast';
-import { RSS_FEED_URL } from '@/lib/api';
 import Home from '@/pages/Home';
 import AboutPage from '@/pages/About';
 import ArticleDetailPage from '@/pages/ArticleDetail';
@@ -27,21 +25,6 @@ function NotFoundPage() {
 }
 
 export default function App() {
-  useEffect(() => {
-    let rssLink = document.head.querySelector<HTMLLinkElement>('link[data-zora-rss="true"]');
-
-    if (!rssLink) {
-      rssLink = document.createElement('link');
-      rssLink.dataset.zoraRss = 'true';
-      document.head.appendChild(rssLink);
-    }
-
-    rssLink.rel = 'alternate';
-    rssLink.type = 'application/rss+xml';
-    rssLink.title = 'Zora Blog RSS Feed';
-    rssLink.href = RSS_FEED_URL;
-  }, []);
-
   return (
     <ThemeProvider>
       <ToastProvider>
