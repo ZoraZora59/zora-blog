@@ -72,9 +72,15 @@ adminRoutes.put('/settings', async (c) => {
     aboutContent?: string | null;
     skills?: string[];
     githubUrl?: string | null;
-    linkedinUrl?: string | null;
-    instagramUrl?: string | null;
     email?: string | null;
+    heroBadge?: string | null;
+    heroTitle?: string | null;
+    heroSubtitle?: string | null;
+    heroPrimaryText?: string | null;
+    heroPrimaryHref?: string | null;
+    heroSecondaryText?: string | null;
+    heroSecondaryHref?: string | null;
+    heroImages?: string[];
     commentModerationEnabled?: boolean;
   }>().catch(() => {
     throw new AppError('请求体必须是 JSON');
@@ -88,9 +94,15 @@ adminRoutes.put('/settings', async (c) => {
     aboutContent: body.aboutContent,
     skills: body.skills,
     githubUrl: body.githubUrl,
-    linkedinUrl: body.linkedinUrl,
-    instagramUrl: body.instagramUrl,
     email: body.email,
+    heroBadge: body.heroBadge,
+    heroTitle: body.heroTitle,
+    heroSubtitle: body.heroSubtitle,
+    heroPrimaryText: body.heroPrimaryText,
+    heroPrimaryHref: body.heroPrimaryHref,
+    heroSecondaryText: body.heroSecondaryText,
+    heroSecondaryHref: body.heroSecondaryHref,
+    heroImages: body.heroImages,
     commentModerationEnabled: body.commentModerationEnabled,
   });
   return success(c, site, '站点设置已更新');

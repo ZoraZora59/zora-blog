@@ -19,9 +19,15 @@ const DEFAULT_SETTINGS = {
 这里会持续记录技术实践、装备体验和山野现场。`,
   skills: ['TypeScript', 'React', 'Node.js', '露营', '徒步', '猫咪'],
   githubUrl: null as string | null,
-  linkedinUrl: null as string | null,
-  instagramUrl: null as string | null,
   email: null as string | null,
+  heroBadge: null as string | null,
+  heroTitle: null as string | null,
+  heroSubtitle: null as string | null,
+  heroPrimaryText: null as string | null,
+  heroPrimaryHref: null as string | null,
+  heroSecondaryText: null as string | null,
+  heroSecondaryHref: null as string | null,
+  heroImages: [] as string[],
   commentModerationEnabled: true,
 };
 
@@ -33,9 +39,15 @@ export interface SiteSettingsInput {
   aboutContent?: string | null;
   skills?: string[];
   githubUrl?: string | null;
-  linkedinUrl?: string | null;
-  instagramUrl?: string | null;
   email?: string | null;
+  heroBadge?: string | null;
+  heroTitle?: string | null;
+  heroSubtitle?: string | null;
+  heroPrimaryText?: string | null;
+  heroPrimaryHref?: string | null;
+  heroSecondaryText?: string | null;
+  heroSecondaryHref?: string | null;
+  heroImages?: string[];
   commentModerationEnabled?: boolean;
 }
 
@@ -65,8 +77,6 @@ async function ensureSiteSettings() {
       aboutContent: DEFAULT_SETTINGS.aboutContent,
       skills: DEFAULT_SETTINGS.skills,
       githubUrl: DEFAULT_SETTINGS.githubUrl,
-      linkedinUrl: DEFAULT_SETTINGS.linkedinUrl,
-      instagramUrl: DEFAULT_SETTINGS.instagramUrl,
       email: DEFAULT_SETTINGS.email,
     },
   });
@@ -81,9 +91,15 @@ function serializeSiteSettings(settings: Awaited<ReturnType<typeof ensureSiteSet
     aboutContent: settings.aboutContent,
     skills: settings.skills,
     githubUrl: settings.githubUrl,
-    linkedinUrl: settings.linkedinUrl,
-    instagramUrl: settings.instagramUrl,
     email: settings.email,
+    heroBadge: settings.heroBadge,
+    heroTitle: settings.heroTitle,
+    heroSubtitle: settings.heroSubtitle,
+    heroPrimaryText: settings.heroPrimaryText,
+    heroPrimaryHref: settings.heroPrimaryHref,
+    heroSecondaryText: settings.heroSecondaryText,
+    heroSecondaryHref: settings.heroSecondaryHref,
+    heroImages: settings.heroImages,
     commentModerationEnabled: settings.commentModerationEnabled,
   };
 }
@@ -141,6 +157,9 @@ export async function updateSiteSettings(input: SiteSettingsInput) {
   const normalizedSkills =
     input.skills?.map((item) => item.trim()).filter(Boolean).slice(0, 24) ?? undefined;
 
+  const normalizedHeroImages =
+    input.heroImages?.map((item) => item.trim()).filter(Boolean).slice(0, 6) ?? undefined;
+
   const updated = await prisma.siteSettings.update({
     where: { id: SITE_SETTINGS_ID },
     data: {
@@ -155,9 +174,23 @@ export async function updateSiteSettings(input: SiteSettingsInput) {
         : {}),
       ...(normalizedSkills !== undefined ? { skills: normalizedSkills } : {}),
       ...(input.githubUrl !== undefined ? { githubUrl: input.githubUrl?.trim() || null } : {}),
-      ...(input.linkedinUrl !== undefined ? { linkedinUrl: input.linkedinUrl?.trim() || null } : {}),
-      ...(input.instagramUrl !== undefined ? { instagramUrl: input.instagramUrl?.trim() || null } : {}),
       ...(input.email !== undefined ? { email: input.email?.trim() || null } : {}),
+      ...(input.heroBadge !== undefined ? { heroBadge: input.heroBadge?.trim() || null } : {}),
+      ...(input.heroTitle !== undefined ? { heroTitle: input.heroTitle?.trim() || null } : {}),
+      ...(input.heroSubtitle !== undefined ? { heroSubtitle: input.heroSubtitle?.trim() || null } : {}),
+      ...(input.heroPrimaryText !== undefined
+        ? { heroPrimaryText: input.heroPrimaryText?.trim() || null }
+        : {}),
+      ...(input.heroPrimaryHref !== undefined
+        ? { heroPrimaryHref: input.heroPrimaryHref?.trim() || null }
+        : {}),
+      ...(input.heroSecondaryText !== undefined
+        ? { heroSecondaryText: input.heroSecondaryText?.trim() || null }
+        : {}),
+      ...(input.heroSecondaryHref !== undefined
+        ? { heroSecondaryHref: input.heroSecondaryHref?.trim() || null }
+        : {}),
+      ...(normalizedHeroImages !== undefined ? { heroImages: normalizedHeroImages } : {}),
       ...(input.commentModerationEnabled !== undefined
         ? { commentModerationEnabled: input.commentModerationEnabled }
         : {}),

@@ -149,9 +149,15 @@ model SiteSettings {
   aboutContent             String?
   skills                   String[] @default([])
   githubUrl                String?
-  linkedinUrl              String?
-  instagramUrl             String?
   email                    String?
+  heroBadge                String?
+  heroTitle                String?
+  heroSubtitle             String?
+  heroPrimaryText          String?
+  heroPrimaryHref          String?
+  heroSecondaryText        String?
+  heroSecondaryHref        String?
+  heroImages               String[] @default([])
   commentModerationEnabled Boolean  @default(true)
   updatedAt                DateTime @updatedAt
   createdAt                DateTime @default(now())

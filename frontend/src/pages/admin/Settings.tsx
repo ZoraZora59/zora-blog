@@ -44,9 +44,15 @@ interface SiteForm {
   aboutContent: string;
   skills: string;
   githubUrl: string;
-  linkedinUrl: string;
-  instagramUrl: string;
   email: string;
+  heroBadge: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroPrimaryText: string;
+  heroPrimaryHref: string;
+  heroSecondaryText: string;
+  heroSecondaryHref: string;
+  heroImages: string[];
   commentModerationEnabled: boolean;
 }
 
@@ -68,9 +74,15 @@ function siteFromSettings(site: SiteSettings): SiteForm {
     aboutContent: site.aboutContent ?? '',
     skills: site.skills.join(', '),
     githubUrl: site.githubUrl ?? '',
-    linkedinUrl: site.linkedinUrl ?? '',
-    instagramUrl: site.instagramUrl ?? '',
     email: site.email ?? '',
+    heroBadge: site.heroBadge ?? '',
+    heroTitle: site.heroTitle ?? '',
+    heroSubtitle: site.heroSubtitle ?? '',
+    heroPrimaryText: site.heroPrimaryText ?? '',
+    heroPrimaryHref: site.heroPrimaryHref ?? '',
+    heroSecondaryText: site.heroSecondaryText ?? '',
+    heroSecondaryHref: site.heroSecondaryHref ?? '',
+    heroImages: site.heroImages ?? [],
     commentModerationEnabled: site.commentModerationEnabled,
   };
 }
@@ -89,9 +101,15 @@ export default function AdminSettings() {
     aboutContent: '',
     skills: '',
     githubUrl: '',
-    linkedinUrl: '',
-    instagramUrl: '',
     email: '',
+    heroBadge: '',
+    heroTitle: '',
+    heroSubtitle: '',
+    heroPrimaryText: '',
+    heroPrimaryHref: '',
+    heroSecondaryText: '',
+    heroSecondaryHref: '',
+    heroImages: [],
     commentModerationEnabled: true,
   });
   const [apiKeyPrefix, setApiKeyPrefix] = useState<string | null>(null);
@@ -107,8 +125,11 @@ export default function AdminSettings() {
   const [error, setError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const heroImageInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [heroImageUploading, setHeroImageUploading] = useState(false);
+  const MAX_HERO_IMAGES = 2;
 
   useEffect(() => {
     let cancelled = false;
@@ -189,9 +210,15 @@ export default function AdminSettings() {
           .map((item) => item.trim())
           .filter(Boolean),
         githubUrl: site.githubUrl.trim() || null,
-        linkedinUrl: site.linkedinUrl.trim() || null,
-        instagramUrl: site.instagramUrl.trim() || null,
         email: site.email.trim() || null,
+        heroBadge: site.heroBadge.trim() || null,
+        heroTitle: site.heroTitle.trim() || null,
+        heroSubtitle: site.heroSubtitle.trim() || null,
+        heroPrimaryText: site.heroPrimaryText.trim() || null,
+        heroPrimaryHref: site.heroPrimaryHref.trim() || null,
+        heroSecondaryText: site.heroSecondaryText.trim() || null,
+        heroSecondaryHref: site.heroSecondaryHref.trim() || null,
+        heroImages: site.heroImages.map((item) => item.trim()).filter(Boolean).slice(0, MAX_HERO_IMAGES),
         commentModerationEnabled: site.commentModerationEnabled,
       });
       setSite(siteFromSettings(updated));
@@ -242,6 +269,55 @@ export default function AdminSettings() {
         logoInputRef.current.value = '';
       }
     }
+  };
+
+  const handleHeroImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (site.heroImages.length >= MAX_HERO_IMAGES) {
+      toast.error(`最多 ${MAX_HERO_IMAGES} 张 Hero 图`);
+      if (heroImageInputRef.current) {
+        heroImageInputRef.current.value = '';
+      }
+      return;
+    }
+    setHeroImageUploading(true);
+    try {
+      const result = await uploadImage(file);
+      setSite((prev) => ({
+        ...prev,
+        heroImages: [...prev.heroImages, result.url].slice(0, MAX_HERO_IMAGES),
+      }));
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : '上传失败';
+      toast.error(message);
+    } finally {
+      setHeroImageUploading(false);
+      if (heroImageInputRef.current) {
+        heroImageInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveHeroImage = (index: number) => {
+    setSite((prev) => ({
+      ...prev,
+      heroImages: prev.heroImages.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleMoveHeroImage = (index: number, delta: -1 | 1) => {
+    setSite((prev) => {
+      const next = [...prev.heroImages];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) {
+        return prev;
+      }
+      [next[index], next[target]] = [next[target], next[index]];
+      return { ...prev, heroImages: next };
+    });
   };
 
   const handleGenerateKey = async () => {
@@ -555,22 +631,6 @@ export default function AdminSettings() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">LinkedIn 链接</span>
-                <Input
-                  onChange={(event) => setSite((prev) => ({ ...prev, linkedinUrl: event.target.value }))}
-                  placeholder="https://www.linkedin.com/in/your-name"
-                  value={site.linkedinUrl}
-                />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">Instagram 链接</span>
-                <Input
-                  onChange={(event) => setSite((prev) => ({ ...prev, instagramUrl: event.target.value }))}
-                  placeholder="https://www.instagram.com/your-name"
-                  value={site.instagramUrl}
-                />
-              </label>
-              <label className="space-y-1 text-sm">
                 <span className="font-medium text-foreground">公开邮箱</span>
                 <Input
                   onChange={(event) => setSite((prev) => ({ ...prev, email: event.target.value }))}
@@ -578,6 +638,163 @@ export default function AdminSettings() {
                   value={site.email}
                 />
               </label>
+            </div>
+
+            <div className="space-y-4 rounded-lg border border-border bg-surface-sunken/40 p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-heading text-sm font-bold text-foreground">首页 Hero 区</h3>
+                <Badge variant="neutral">首页顶部</Badge>
+              </div>
+              <p className="text-xs text-muted">
+                控制首页顶部的大标题、副标题、两个行动按钮和配图；字段为空时使用默认文案兜底。
+              </p>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">标签（Badge）</span>
+                <Input
+                  onChange={(event) => setSite((prev) => ({ ...prev, heroBadge: event.target.value }))}
+                  placeholder="Tech-Outdoor Journal"
+                  value={site.heroBadge}
+                />
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">主标题</span>
+                <Input
+                  onChange={(event) => setSite((prev) => ({ ...prev, heroTitle: event.target.value }))}
+                  placeholder="Developer by day, adventurer by night"
+                  value={site.heroTitle}
+                />
+                <span className="block text-xs text-subtle">支持换行：用 \n 会渲染为新行。</span>
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">副标题</span>
+                <Textarea
+                  onChange={(event) => setSite((prev) => ({ ...prev, heroSubtitle: event.target.value }))}
+                  placeholder="记录工程现场、营地清晨和装备实战，把技术的秩序感带进山野。"
+                  rows={3}
+                  value={site.heroSubtitle}
+                />
+              </label>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-foreground">主按钮文案</span>
+                  <Input
+                    onChange={(event) => setSite((prev) => ({ ...prev, heroPrimaryText: event.target.value }))}
+                    placeholder="浏览最新文章"
+                    value={site.heroPrimaryText}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-foreground">主按钮链接</span>
+                  <Input
+                    onChange={(event) => setSite((prev) => ({ ...prev, heroPrimaryHref: event.target.value }))}
+                    placeholder="#latest-dispatch"
+                    value={site.heroPrimaryHref}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-foreground">次按钮文案</span>
+                  <Input
+                    onChange={(event) => setSite((prev) => ({ ...prev, heroSecondaryText: event.target.value }))}
+                    placeholder="查看专题"
+                    value={site.heroSecondaryText}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-foreground">次按钮链接</span>
+                  <Input
+                    onChange={(event) => setSite((prev) => ({ ...prev, heroSecondaryHref: event.target.value }))}
+                    placeholder="/topics"
+                    value={site.heroSecondaryHref}
+                  />
+                </label>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-foreground">Hero 图片（最多 {MAX_HERO_IMAGES} 张）</span>
+                  <span className="text-xs text-subtle">{site.heroImages.length}/{MAX_HERO_IMAGES}</span>
+                </div>
+
+                {site.heroImages.length > 0 ? (
+                  <ul className="space-y-2">
+                    {site.heroImages.map((url, index) => (
+                      <li
+                        className="flex items-center gap-3 rounded-lg border border-border bg-surface p-2"
+                        key={`${url}-${index}`}
+                      >
+                        <img
+                          alt={`Hero ${index + 1}`}
+                          className="size-14 rounded-md object-cover"
+                          referrerPolicy="no-referrer"
+                          src={resolveMediaUrl(url)}
+                        />
+                        <Input
+                          className="flex-1"
+                          onChange={(event) => {
+                            const next = [...site.heroImages];
+                            next[index] = event.target.value;
+                            setSite((prev) => ({ ...prev, heroImages: next }));
+                          }}
+                          placeholder="图片 URL"
+                          value={url}
+                        />
+                        <div className="flex items-center gap-1">
+                          <button
+                            className="rounded px-2 py-1 text-xs text-subtle hover:text-foreground disabled:opacity-40"
+                            disabled={index === 0}
+                            onClick={() => handleMoveHeroImage(index, -1)}
+                            type="button"
+                          >
+                            上移
+                          </button>
+                          <button
+                            className="rounded px-2 py-1 text-xs text-subtle hover:text-foreground disabled:opacity-40"
+                            disabled={index === site.heroImages.length - 1}
+                            onClick={() => handleMoveHeroImage(index, 1)}
+                            type="button"
+                          >
+                            下移
+                          </button>
+                          <button
+                            className="rounded px-2 py-1 text-xs text-error hover:text-error"
+                            onClick={() => handleRemoveHeroImage(index)}
+                            type="button"
+                          >
+                            移除
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-subtle">
+                    还没有 Hero 图，使用默认 Unsplash 兜底。
+                  </p>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    disabled={heroImageUploading || site.heroImages.length >= MAX_HERO_IMAGES}
+                    onClick={() => heroImageInputRef.current?.click()}
+                    size="sm"
+                    type="button"
+                    variant="secondary"
+                  >
+                    {heroImageUploading ? '上传中…' : '上传 Hero 图'}
+                  </Button>
+                  <input
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(event) => void handleHeroImageUpload(event)}
+                    ref={heroImageInputRef}
+                    type="file"
+                  />
+                </div>
+              </div>
             </div>
 
             <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-sunken/60 p-3">

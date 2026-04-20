@@ -1,10 +1,4 @@
-import {
-  ArrowUpRight,
-  Github,
-  Instagram,
-  Linkedin,
-  Mail,
-} from 'lucide-react';
+import { ArrowUpRight, Github, Mail } from 'lucide-react';
 import MarkdownArticle from '@/components/markdown/MarkdownArticle';
 import Badge from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
@@ -48,12 +42,6 @@ export default function AboutPage() {
   const socialLinks = [
     site.githubUrl
       ? { label: 'GitHub', href: site.githubUrl, icon: Github }
-      : null,
-    site.linkedinUrl
-      ? { label: 'LinkedIn', href: site.linkedinUrl, icon: Linkedin }
-      : null,
-    site.instagramUrl
-      ? { label: 'Instagram', href: site.instagramUrl, icon: Instagram }
       : null,
     site.email
       ? { label: '邮箱', href: `mailto:${site.email}`, icon: Mail }

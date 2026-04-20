@@ -44,8 +44,6 @@ async function main() {
 这个博客会持续记录前端 / 后端实践、露营与徒步、装备体验，还有一些留给自己的现场笔记。`,
       skills: ['TypeScript', 'React', 'Node.js', '露营', '徒步', '猫咪'],
       githubUrl: 'https://github.com/',
-      linkedinUrl: 'https://www.linkedin.com/',
-      instagramUrl: 'https://www.instagram.com/',
       email: 'hello@zora.blog',
     },
     create: {
@@ -66,8 +64,6 @@ async function main() {
 这个博客会持续记录前端 / 后端实践、露营与徒步、装备体验，还有一些留给自己的现场笔记。`,
       skills: ['TypeScript', 'React', 'Node.js', '露营', '徒步', '猫咪'],
       githubUrl: 'https://github.com/',
-      linkedinUrl: 'https://www.linkedin.com/',
-      instagramUrl: 'https://www.instagram.com/',
       email: 'hello@zora.blog',
     },
   });

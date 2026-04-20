@@ -112,9 +112,15 @@ export interface SiteSettings {
   aboutContent: string | null;
   skills: string[];
   githubUrl: string | null;
-  linkedinUrl: string | null;
-  instagramUrl: string | null;
   email: string | null;
+  heroBadge: string | null;
+  heroTitle: string | null;
+  heroSubtitle: string | null;
+  heroPrimaryText: string | null;
+  heroPrimaryHref: string | null;
+  heroSecondaryText: string | null;
+  heroSecondaryHref: string | null;
+  heroImages: string[];
   commentModerationEnabled: boolean;
 }
 

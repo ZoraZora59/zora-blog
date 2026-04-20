@@ -1,4 +1,4 @@
-import { ExternalLink, Github, Instagram, Linkedin, Mail } from 'lucide-react';
+import { ExternalLink, Github, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSiteInfo } from '@/hooks/useSiteInfo';
 
@@ -11,20 +11,6 @@ export default function Footer() {
           label: 'GitHub',
           href: site.githubUrl,
           icon: Github,
-        }
-      : null,
-    site?.linkedinUrl
-      ? {
-          label: 'LinkedIn',
-          href: site.linkedinUrl,
-          icon: Linkedin,
-        }
-      : null,
-    site?.instagramUrl
-      ? {
-          label: 'Instagram',
-          href: site.instagramUrl,
-          icon: Instagram,
         }
       : null,
     site?.email

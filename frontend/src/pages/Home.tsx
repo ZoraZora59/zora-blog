@@ -1,6 +1,6 @@
 import { ArrowRight, Compass, Search } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ArticleCard from '@/components/ui/ArticleCard';
 import Badge from '@/components/ui/Badge';
@@ -8,17 +8,39 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useArticles } from '@/hooks/useArticles';
 import { useCategories } from '@/hooks/useCategories';
+import { useSiteInfo } from '@/hooks/useSiteInfo';
+import { resolveMediaThumbnail } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-const heroImages = [
-  'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1200&q=80',
-];
+const DEFAULT_HERO = {
+  badge: 'Tech-Outdoor Journal',
+  title: 'Developer by day,\nadventurer by night',
+  subtitle: '记录工程现场、营地清晨和装备实战，把技术的秩序感带进山野。',
+  primaryText: '浏览最新文章',
+  primaryHref: '#latest-dispatch',
+  secondaryText: '查看专题',
+  secondaryHref: '/topics',
+  images: [
+    'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1200&q=80',
+  ],
+};
+
+function renderMultilineTitle(text: string) {
+  const parts = text.split(/\\n|\n/);
+  return parts.map((segment, index) => (
+    <Fragment key={index}>
+      {segment}
+      {index < parts.length - 1 ? <br /> : null}
+    </Fragment>
+  ));
+}
 
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedCategory = searchParams.get('category') ?? '';
   const { categories } = useCategories();
+  const { siteInfo } = useSiteInfo();
   const {
     articles,
     error,
@@ -34,6 +56,21 @@ export default function Home() {
 
   const featuredArticle = articles[0] ?? null;
   const remainingArticles = useMemo(() => articles.slice(1), [articles]);
+
+  const site = siteInfo?.site ?? null;
+  const heroBadge = site?.heroBadge?.trim() || DEFAULT_HERO.badge;
+  const heroTitle = site?.heroTitle?.trim() || DEFAULT_HERO.title;
+  const heroSubtitle = site?.heroSubtitle?.trim() || DEFAULT_HERO.subtitle;
+  const heroPrimaryText = site?.heroPrimaryText?.trim() || DEFAULT_HERO.primaryText;
+  const heroPrimaryHref = site?.heroPrimaryHref?.trim() || DEFAULT_HERO.primaryHref;
+  const heroSecondaryText = site?.heroSecondaryText?.trim() || DEFAULT_HERO.secondaryText;
+  const heroSecondaryHref = site?.heroSecondaryHref?.trim() || DEFAULT_HERO.secondaryHref;
+  const heroImagesRaw = site?.heroImages && site.heroImages.length > 0 ? site.heroImages : DEFAULT_HERO.images;
+  const heroImages = heroImagesRaw
+    .map((url) => resolveMediaThumbnail(url, { width: 840, height: 960, quality: 82 }))
+    .filter(Boolean);
+  const isPrimaryExternal = /^https?:\/\//i.test(heroPrimaryHref) || heroPrimaryHref.startsWith('#');
+  const isSecondaryExternal = /^https?:\/\//i.test(heroSecondaryHref) || heroSecondaryHref.startsWith('#');
 
   const handleCategoryChange = (slug: string) => {
     const next = new URLSearchParams(searchParams);
@@ -59,34 +96,53 @@ export default function Home() {
           >
             <div className="space-y-6">
               <Badge className="w-fit" variant="category">
-                Tech-Outdoor Journal
+                {heroBadge}
               </Badge>
               <div className="space-y-4">
                 <h1 className="max-w-3xl text-5xl font-heading font-bold leading-none tracking-tight text-foreground md:text-6xl lg:text-7xl">
-                  Developer by day, <br />
-                  adventurer by night
+                  {renderMultilineTitle(heroTitle)}
                 </h1>
                 <p className="max-w-xl text-base leading-relaxed text-muted md:text-lg">
-                  记录工程现场、营地清晨和装备实战，把技术的秩序感带进山野。
+                  {heroSubtitle}
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <a
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-primary-light"
-                href="#latest-dispatch"
-              >
-                浏览最新文章
-                <ArrowRight className="size-4" />
-              </a>
-              <Link
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-surface-sunken px-6 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-border"
-                to="/topics"
-              >
-                <Compass className="size-4" />
-                查看专题
-              </Link>
+              {isPrimaryExternal ? (
+                <a
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-primary-light"
+                  href={heroPrimaryHref}
+                >
+                  {heroPrimaryText}
+                  <ArrowRight className="size-4" />
+                </a>
+              ) : (
+                <Link
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-primary-light"
+                  to={heroPrimaryHref}
+                >
+                  {heroPrimaryText}
+                  <ArrowRight className="size-4" />
+                </Link>
+              )}
+              {isSecondaryExternal ? (
+                <a
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-surface-sunken px-6 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-border"
+                  href={heroSecondaryHref}
+                >
+                  <Compass className="size-4" />
+                  {heroSecondaryText}
+                </a>
+              ) : (
+                <Link
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-surface-sunken px-6 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-border"
+                  to={heroSecondaryHref}
+                >
+                  <Compass className="size-4" />
+                  {heroSecondaryText}
+                </Link>
+              )}
             </div>
           </motion.div>
 
@@ -96,28 +152,32 @@ export default function Home() {
             transition={{ duration: 0.35, ease: 'easeOut', delay: 0.08 }}
             className="grid gap-5"
           >
-            <div className="overflow-hidden rounded-xl bg-surface-raised shadow-lg">
-              <img
-                alt="Mountain workspace"
-                className="aspect-[4/4.6] w-full object-cover"
-                loading="eager"
-                referrerPolicy="no-referrer"
-                src={heroImages[0]}
-              />
-            </div>
-            <div className="hidden grid-cols-2 gap-5 md:grid">
-              {heroImages.slice(1).map((image) => (
-                <div className="overflow-hidden rounded-xl bg-surface-raised shadow-sm" key={image}>
-                  <img
-                    alt="Outdoor snapshot"
-                    className="aspect-[16/10] w-full object-cover"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    src={image}
-                  />
-                </div>
-              ))}
-            </div>
+            {heroImages[0] ? (
+              <div className="overflow-hidden rounded-xl bg-surface-raised shadow-lg">
+                <img
+                  alt="Hero primary"
+                  className="aspect-[4/4.6] w-full object-cover"
+                  loading="eager"
+                  referrerPolicy="no-referrer"
+                  src={heroImages[0]}
+                />
+              </div>
+            ) : null}
+            {heroImages.length > 1 ? (
+              <div className="hidden grid-cols-2 gap-5 md:grid">
+                {heroImages.slice(1).map((image, index) => (
+                  <div className="overflow-hidden rounded-xl bg-surface-raised shadow-sm" key={`${image}-${index}`}>
+                    <img
+                      alt="Hero secondary"
+                      className="aspect-[16/10] w-full object-cover"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      src={image}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </motion.div>
         </div>
       </section>
