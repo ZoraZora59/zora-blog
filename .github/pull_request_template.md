@@ -15,9 +15,11 @@
 
 ## 对照交付标准
 
+- [ ] 已对照 `harness/rules-v1.0.0.md`（v1.0.0 规则总册）
 - [ ] 已对照 `docs/milestone-pr-plan.md`
 - [ ] 未混入其他里程碑范围
 - [ ] 涉及页面已对照对应 stitch 原型图
+- [ ] PR 标题包含里程碑编号（形如 `feat: M3 ...`），否则打 `skip-harness` label 说明原因
 
 ## 自动验证
 

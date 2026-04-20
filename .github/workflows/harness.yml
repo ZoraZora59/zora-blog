@@ -1,0 +1,69 @@
+name: Milestone Harness
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      milestone:
+        description: "手动触发时指定里程碑（M1..M8）"
+        required: true
+        default: "M1"
+
+jobs:
+  verify:
+    name: verify-milestone.sh
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 解析里程碑编号
+        id: resolve
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+          INPUT_MILESTONE: ${{ github.event.inputs.milestone }}
+        run: |
+          set -e
+
+          # 允许用 label "skip-harness" 跳过（hotfix、纯文档等）
+          if echo "$PR_LABELS" | grep -q '"skip-harness"'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "检测到 skip-harness label，跳过 harness"
+            exit 0
+          fi
+
+          if [ -n "$INPUT_MILESTONE" ]; then
+            M="$INPUT_MILESTONE"
+          else
+            # 从 PR 标题中抓取 M1..M8
+            M=$(echo "$PR_TITLE" | grep -oE 'M[1-8]' | head -n1 || true)
+          fi
+
+          if [ -z "$M" ]; then
+            echo "::error::未能从 PR 标题中解析出 M1..M8。请在标题加入里程碑编号，或打 skip-harness label 跳过。标题：$PR_TITLE"
+            exit 1
+          fi
+
+          echo "milestone=$M" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "解析到里程碑：$M"
+
+      - name: Install dependencies
+        if: steps.resolve.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Run verify-milestone.sh
+        if: steps.resolve.outputs.skip != 'true'
+        run: |
+          chmod +x ./scripts/verify-milestone.sh
+          ./scripts/verify-milestone.sh ${{ steps.resolve.outputs.milestone }}

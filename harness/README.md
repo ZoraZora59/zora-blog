@@ -1,5 +1,7 @@
 # Milestone Harness
 
+> v1.0.0 规则总册已沉淀在 [`rules-v1.0.0.md`](/Users/didi/CodeBase/GithubCode/zora-blog/harness/rules-v1.0.0.md)，包含技术栈、代码规范、里程碑交付矩阵、质量闸门、API 基线、部署基线与发版 checklist。本文件仅保留 harness 脚本与工作流说明。
+
 这个 harness 的目标不是替代单元测试，而是给 `M1-M8` 提供统一的里程碑验收入口，让每个 PR 在合并前都能回答三件事：
 
 1. 结构是否落到位
