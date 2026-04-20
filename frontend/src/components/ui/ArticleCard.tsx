@@ -2,9 +2,8 @@ import { CalendarDays, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Badge from '@/components/ui/Badge';
 import type { ArticleSummary } from '@/lib/api';
-import { formatDate, formatNumber } from '@/lib/utils';
-import { resolveMediaUrl } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { resolveMediaThumbnail } from '@/lib/api';
+import { cn, formatDate, formatNumber } from '@/lib/utils';
 
 interface ArticleCardProps {
   article: ArticleSummary;
@@ -17,30 +16,56 @@ export default function ArticleCard({
 }: ArticleCardProps) {
   const featured = variant === 'featured';
 
+  // featured 卡片的封面更大（右侧列 16:10），standard 卡片固定 16:9。
+  // 宽度用一个合理上限估算，CDN 会按 DPR 返回合适的缩略图。
+  const thumbSrc = featured
+    ? resolveMediaThumbnail(article.coverImage, { width: 720, height: 450, quality: 82 })
+    : resolveMediaThumbnail(article.coverImage, { width: 640, height: 360, quality: 80 });
+
   return (
     <Link
       className={cn(
-        'group block overflow-hidden rounded-xl bg-surface-raised shadow-sm transition-shadow duration-200 hover:shadow-md',
-        featured ? 'lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.85fr)]' : '',
+        'group flex w-full flex-col overflow-hidden rounded-xl bg-surface-raised shadow-sm transition-shadow duration-200 hover:shadow-md',
+        featured
+          ? 'h-full lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.85fr)]'
+          : 'h-full',
       )}
       to={`/articles/${article.slug}`}
     >
-      <div className={cn('overflow-hidden', featured ? 'h-full' : '')}>
-        <img
-          alt={article.title}
-          className={cn(
-            'w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]',
-            featured ? 'aspect-[16/9] h-full lg:aspect-auto' : 'aspect-[4/3]',
-          )}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          src={resolveMediaUrl(article.coverImage)}
-        />
+      {/* 封面：容器强制纵横比，图片 absolute 填满 + object-cover，彻底避免被原图比例撑开 */}
+      <div
+        className={cn(
+          'relative w-full shrink-0 overflow-hidden bg-surface-sunken',
+          featured
+            ? 'aspect-[16/9] lg:aspect-auto lg:h-full lg:min-h-[280px]'
+            : 'aspect-[16/9]',
+        )}
+      >
+        {thumbSrc ? (
+          <img
+            alt={article.title}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            decoding="async"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            src={thumbSrc}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-surface-sunken to-surface-raised text-xs text-subtle">
+            暂无封面
+          </div>
+        )}
       </div>
 
-      <div className={cn('space-y-4 p-6', featured ? 'flex flex-col justify-between' : '')}>
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
+      {/* 正文：flex 占满剩余高度，标题/摘要 line-clamp，保证卡片整体高度一致 */}
+      <div
+        className={cn(
+          'flex min-w-0 flex-1 flex-col gap-4 p-6',
+          featured ? 'justify-between' : '',
+        )}
+      >
+        <div className="space-y-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 overflow-hidden">
             <Badge variant="category">{article.category.name}</Badge>
             {article.tags.slice(0, featured ? 2 : 1).map((tag) => (
               <Badge key={tag.id} variant="tech">
@@ -49,19 +74,24 @@ export default function ArticleCard({
             ))}
           </div>
 
-          <div className="space-y-3">
-            <h3
-              className={cn(
-                'text-foreground transition-colors duration-150 group-hover:text-primary',
-                featured ? 'text-2xl font-heading font-bold' : 'text-lg font-semibold',
-              )}
-            >
-              {article.title}
-            </h3>
-            <p className="text-sm leading-relaxed text-muted">
-              {article.excerpt || '继续阅读完整内容。'}
-            </p>
-          </div>
+          <h3
+            className={cn(
+              'text-foreground transition-colors duration-150 group-hover:text-primary',
+              featured
+                ? 'line-clamp-2 text-2xl font-heading font-bold leading-snug'
+                : 'line-clamp-2 text-lg font-semibold leading-snug',
+            )}
+          >
+            {article.title}
+          </h3>
+          <p
+            className={cn(
+              'text-sm leading-relaxed text-muted',
+              featured ? 'line-clamp-3' : 'line-clamp-2',
+            )}
+          >
+            {article.excerpt || '继续阅读完整内容。'}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4 text-xs text-subtle">

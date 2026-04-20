@@ -217,6 +217,7 @@ export default function Home() {
               {remainingArticles.map((article) => (
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
+                  className="flex h-full"
                   initial={{ opacity: 0, y: 16 }}
                   key={article.id}
                   transition={{ duration: 0.3, ease: 'easeOut' }}

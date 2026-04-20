@@ -436,6 +436,65 @@ export function resolveMediaUrl(value?: string | null) {
   return value;
 }
 
+/**
+ * 允许追加 imageView2 参数的 CDN 域名白名单。通过 VITE_QINIU_PUBLIC_HOST 配置。
+ * 仅对匹配的 host 生效，避免对 Unsplash / 其他站点乱加七牛专有参数。
+ * 支持逗号分隔多个 host（例如 `img.example.com,cdn2.example.com`）。
+ */
+const QINIU_HOST_WHITELIST: string[] = (() => {
+  const raw = import.meta.env.VITE_QINIU_PUBLIC_HOST as string | undefined;
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((v) => v.trim().replace(/^https?:\/\//i, '').replace(/\/$/, ''))
+    .filter(Boolean);
+})();
+
+function isQiniuUrl(url: string) {
+  if (QINIU_HOST_WHITELIST.length === 0) return false;
+  try {
+    const host = new URL(url).host;
+    return QINIU_HOST_WHITELIST.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Qiniu CDN 图片处理：对七牛云返回的图片 URL 追加 imageView2 / imageMogr2 参数，
+ * 由 CDN 侧完成裁剪、压缩、WebP 转码，避免前端加载未压缩的大图。
+ * - 非七牛（或本地 uploads/外站）URL 直接原样返回（无副作用）。
+ * - width/height 为目标展示尺寸（CSS px），会自动乘以 DPR，上限 1600。
+ */
+export function resolveMediaThumbnail(
+  value?: string | null,
+  options: { width?: number; height?: number; quality?: number } = {},
+) {
+  const url = resolveMediaUrl(value);
+  if (!url) return '';
+
+  // 只对白名单内的七牛 CDN URL 应用处理参数，其他站点原样返回。
+  if (!isQiniuUrl(url)) return url;
+  // 已带处理参数则不重复添加。
+  if (/[?&](imageView2|imageMogr2)/i.test(url)) return url;
+
+  const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
+  const cap = 1600;
+  const w = options.width ? Math.min(Math.round(options.width * dpr), cap) : undefined;
+  const h = options.height ? Math.min(Math.round(options.height * dpr), cap) : undefined;
+  const q = Math.max(1, Math.min(100, options.quality ?? 80));
+
+  // imageView2/2 = 按尺寸等比缩放不裁剪（contain 语义），前端再用 object-cover 兜底裁剪。
+  const segs: string[] = ['imageView2', '2'];
+  if (w) segs.push('w', String(w));
+  if (h) segs.push('h', String(h));
+  segs.push('q', String(q), 'format', 'webp');
+
+  const suffix = segs.join('/');
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}${suffix}`;
+}
+
 // ---- C 端接口 ----
 export function listArticles(params: ArticleListParams = {}) {
   return request<ArticleListResult>('/articles', undefined, params);
