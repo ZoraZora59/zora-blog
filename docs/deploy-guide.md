@@ -70,7 +70,7 @@ rsync -av repo/frontend/ frontend/ --exclude node_modules --exclude dist
 
 # 部署配置
 mkdir -p deploy
-cp repo/deploy/* deploy/
+rsync -av repo/deploy/ deploy/
 ```
 
 ### 2.3 配置环境变量
@@ -89,7 +89,19 @@ API_KEY_SALT="随机生成的盐值"
 PORT=3001
 NODE_ENV=production
 SITE_URL="https://www.zorazora.cn"
+QINIU_ACCESS_KEY="你的七牛 AK"
+QINIU_SECRET_KEY="你的七牛 SK"
+QINIU_BUCKET="zora-markdown"
+QINIU_ROOT_PREFIX="/zora_blog"
+QINIU_PUBLIC_BASE_URL="https://cdn.zorazora.cn"
 ```
+
+说明：
+- `QINIU_BUCKET` 当前项目固定使用 `zora-markdown`
+- `QINIU_ROOT_PREFIX` 固定使用 `/zora_blog`
+- 生产环境会自动把图片写入 `zora_blog/prod/`
+- 非生产环境会自动写入 `zora_blog/non-prod/`
+- 七牛空间必须是公开空间，否则前端直接访问图片会返回 `401`
 
 生成随机密钥：
 ```bash
@@ -118,7 +130,38 @@ npx prisma migrate deploy
 npx prisma db seed  # 创建默认管理员账户
 ```
 
-### 2.6 启动后端服务
+### 2.6 迁移历史本地图片
+
+如果线上仍有旧的 `/uploads/*` 图片引用，首次切换到七牛后需要执行一次迁移：
+
+```bash
+cd /www/wwwroot/zora-blog/backend
+
+# 先预演，查看哪些记录会被迁移
+npm run media:migrate-to-qiniu -- --dry-run
+
+# 确认无误后正式执行
+npm run media:migrate-to-qiniu
+```
+
+迁移范围：
+- 管理员头像 `admins.avatar`
+- 文章封面 `articles.coverImage`
+- 专题封面 `topics.coverImage`
+- 站点 Logo `site_settings.logo`
+
+迁移规则：
+- 仅处理值为 `/uploads/*` 或历史站点 `/uploads/*` URL 的记录
+- 本地源文件默认从 `backend/uploads/` 读取
+- 上传后统一写入七牛 `zora_blog/prod/legacy/`
+- 数据库字段会回写为七牛公网 URL
+
+建议：
+- 正式执行前先备份数据库
+- 在确认页面展示无误前，不要删除服务器上的旧 `backend/uploads/` 文件
+- 使用 `deploy/deploy.sh` 部署时，会自动执行正式迁移
+
+### 2.7 启动后端服务
 
 ```bash
 pm2 start /www/wwwroot/zora-blog/deploy/ecosystem.config.js --env production
@@ -128,7 +171,7 @@ pm2 save
 验证服务：
 ```bash
 pm2 status
-curl http://127.0.0.1:3001/api
+curl http://127.0.0.1:3001/
 ```
 
 ## 三、Nginx 配置
@@ -178,7 +221,8 @@ pm2 logs zora-blog-backend
 
 - 前台首页：https://www.zorazora.cn
 - 管理后台：https://www.zorazora.cn/admin
-- API 健康检查：https://www.zorazora.cn/api
+- API 健康检查：https://www.zorazora.cn/
+- 管理端上传一张测试图片后，确认返回 URL 为 `https://cdn.zorazora.cn/zora_blog/prod/...`
 
 ### 4.3 默认管理员
 
@@ -241,6 +285,14 @@ tail -f /www/wwwlogs/zora-blog.error.log
 - 检查 Nginx root 配置
 - 检查浏览器控制台错误
 
+### 6.4 七牛图片返回 401 / 无法显示
+
+- 检查 `.env` 中的 `QINIU_PUBLIC_BASE_URL` 是否正确
+- 检查七牛空间是否为公开空间
+- 检查上传后的 URL 是否落在 `zora_blog/prod/` 目录
+- 检查域名 `cdn.zorazora.cn` 是否仍绑定在 `zora-markdown` 空间
+- 如为历史资源切换阶段，执行 `npm run media:migrate-to-qiniu -- --dry-run` 确认仍有未迁移记录
+
 ---
 
 ## 附录：目录结构
@@ -250,7 +302,7 @@ tail -f /www/wwwlogs/zora-blog.error.log
 ├── repo/                    # Git 仓库
 ├── backend/                 # 后端代码
 │   ├── dist/               # 编译产物
-│   ├── uploads/            # 上传文件
+│   ├── uploads/            # 历史本地图片（迁移完成前保留）
 │   ├── prisma/             # 数据库模型
 │   └── .env                # 环境变量
 ├── frontend/               # 前端代码

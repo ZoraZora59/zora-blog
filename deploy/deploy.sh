@@ -54,6 +54,7 @@ pull_code() {
 # 同步代码到部署目录
 sync_code() {
   log "同步代码到部署目录..."
+  # 保留历史本地图片，供迁移脚本处理
 
   # 同步后端
   rsync -av --delete \
@@ -68,6 +69,9 @@ sync_code() {
     --exclude 'node_modules' \
     --exclude 'dist' \
     "$REPO_DIR/frontend/" "$FRONTEND_DIR/"
+
+  # 同步部署配置
+  rsync -av "$REPO_DIR/deploy/" "$DEPLOY_DIR/deploy/"
 
   log "代码同步完成"
 }
@@ -106,6 +110,14 @@ migrate_database() {
   log "数据库迁移完成"
 }
 
+# 迁移历史本地图片到七牛云
+migrate_legacy_media() {
+  log "迁移历史本地图片到七牛云..."
+  cd "$BACKEND_DIR"
+  npm run media:migrate-to-qiniu
+  log "历史本地图片迁移完成"
+}
+
 # 重启服务
 restart_service() {
   log "重启后端服务..."
@@ -134,6 +146,7 @@ main() {
   install_dependencies
   build_project
   migrate_database
+  migrate_legacy_media
   restart_service
   reload_nginx
 

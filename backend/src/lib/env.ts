@@ -16,12 +16,24 @@ function getEnv(name: string, fallback?: string) {
   return value;
 }
 
+function getOptionalEnv(name: string, fallback = '') {
+  return (process.env[name] ?? fallback).trim();
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3001),
-  databaseUrl: getEnv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/zora_blog?schema=public'),
+  databaseUrl: getEnv(
+    'DATABASE_URL',
+    'postgresql://postgres:postgres@localhost:5432/zora_blog?schema=public',
+  ),
   jwtSecret: getEnv('JWT_SECRET', 'dev-jwt-secret-change-me-please'),
   apiKeySalt: getEnv('API_KEY_SALT', 'dev-api-key-salt-change-me-please'),
   seedAdminPassword: process.env.SEED_ADMIN_PASSWORD ?? 'admin123456',
   siteUrl: (process.env.SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
+  qiniuAccessKey: getOptionalEnv('QINIU_ACCESS_KEY'),
+  qiniuSecretKey: getOptionalEnv('QINIU_SECRET_KEY'),
+  qiniuBucket: getOptionalEnv('QINIU_BUCKET'),
+  qiniuRootPrefix: process.env.QINIU_ROOT_PREFIX ?? '/zora_blog',
+  qiniuPublicBaseUrl: getOptionalEnv('QINIU_PUBLIC_BASE_URL').replace(/\/$/, ''),
 };

@@ -1,11 +1,9 @@
 import { Hono } from 'hono';
-import { randomUUID } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
-import path from 'node:path';
 import { AppError } from '../lib/app-error.js';
 import { parseIdParam, parseOrder } from '../lib/pagination.js';
 import { success } from '../lib/response.js';
-import { allowedMimeTypes, ensureUploadsDir, uploadsDir } from '../lib/uploads.js';
+import { uploadImageToCloud } from '../lib/media-storage.js';
+import { allowedMimeTypes } from '../lib/uploads.js';
 import { requireAuth } from '../middleware/auth.js';
 import {
   createCategory,
@@ -411,16 +409,7 @@ adminRoutes.post('/upload', async (c) => {
     throw new AppError('图片大小不能超过 5MB');
   }
 
-  await ensureUploadsDir();
-  const extension = allowedMimeTypes[value.type];
-  const fileName = `${Date.now()}-${randomUUID()}${extension}`;
-  const filePath = path.join(uploadsDir, fileName);
+  const result = await uploadImageToCloud(value);
 
-  const buffer = Buffer.from(await value.arrayBuffer());
-  await writeFile(filePath, buffer);
-
-  return success(c, {
-    filename: fileName,
-    url: `/uploads/${fileName}`,
-  }, '上传成功', 201);
+  return success(c, result, '上传成功', 201);
 });
