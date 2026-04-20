@@ -3,15 +3,23 @@
   "private": true,
   "version": "0.1.0",
   "description": "程序员猫奴露营博客 — Tech-Outdoor Fusion",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "packages/*"
+  ],
   "scripts": {
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm run build",
-    "lint:frontend": "cd frontend && npm run lint:all",
-    "lint:backend": "cd backend && npm run lint:all",
+    "dev:frontend": "npm run dev -w zora-blog-frontend",
+    "dev:backend": "npm run dev -w zora-blog-backend",
+    "build:frontend": "npm run build -w zora-blog-frontend",
+    "build:backend": "npm run build -w zora-blog-backend",
+    "build:sdk": "npm run build -w @zora-blog/sdk",
+    "build:cli": "npm run build -w @zora-blog/cli",
+    "build:mcp": "npm run build -w @zora-blog/mcp",
+    "lint:frontend": "npm run lint:all -w zora-blog-frontend",
+    "lint:backend": "npm run lint:all -w zora-blog-backend",
     "lint": "npm run lint:frontend && npm run lint:backend",
-    "format": "cd frontend && npm run format && cd ../backend && npm run format",
-    "format:check": "cd frontend && npm run format:check && cd ../backend && npm run format:check"
+    "format": "npm run format -w zora-blog-frontend && npm run format -w zora-blog-backend",
+    "format:check": "npm run format:check -w zora-blog-frontend && npm run format:check -w zora-blog-backend"
   }
 }

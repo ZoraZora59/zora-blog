@@ -46,12 +46,29 @@ zora-blog/
 - 使用 mock 数据，尚未接入后端 API
 - 重命名项目标识（package name、页面 title）
 
+## 工具链
+
+仓库是 npm workspaces monorepo：
+
+```
+backend/          Hono + Prisma + PostgreSQL 服务
+frontend/         Vite + React 19 管理后台和前台
+packages/sdk/     @zora-blog/sdk    TypeScript 客户端，封装 admin REST API
+packages/cli/     @zora-blog/cli    zora-blog CLI（类比 gh 之于 GitHub）
+packages/mcp/     @zora-blog/mcp    MCP server（给 Claude/Cursor 用，stdio + HTTP）
+```
+
+详见 [packages/cli/README.md](packages/cli/README.md) 与 [packages/mcp/README.md](packages/mcp/README.md)。
+
 ## 开发
 
 ```bash
-cd frontend
-npm install
-npm run dev   # 启动开发服务器 http://localhost:3000
+npm install                # 一次性装齐所有 workspace
+npm run dev:frontend       # 前端 http://localhost:3000
+npm run dev:backend        # 后端 http://localhost:3001
+npm run build:sdk          # 构建 SDK（CLI/MCP 依赖）
+npm run build:cli          # 构建 CLI
+npm run build:mcp          # 构建 MCP server
 ```
 
 ## 部署

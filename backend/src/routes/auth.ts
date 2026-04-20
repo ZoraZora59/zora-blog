@@ -5,7 +5,8 @@ import { env } from '../lib/env.js';
 import { signJwtToken } from '../lib/auth.js';
 import { success } from '../lib/response.js';
 import { loginAdmin, generateAdminApiKey, revokeAdminApiKey } from '../services/auth-service.js';
-import { requireCookieAuth } from '../middleware/auth.js';
+import { requireAuth, requireCookieAuth } from '../middleware/auth.js';
+import { prisma } from '../lib/prisma.js';
 import type { AppBindings } from '../lib/types.js';
 
 const AUTH_COOKIE_NAME = 'zora_token';
@@ -32,6 +33,24 @@ authRoutes.post('/login', async (c) => {
   });
 
   return success(c, { admin }, '登录成功');
+});
+
+authRoutes.get('/me', requireAuth, async (c) => {
+  const current = c.get('admin');
+  const admin = await prisma.admin.findUnique({
+    where: { id: current.id },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatar: true,
+      bio: true,
+      role: true,
+      apiKeyPrefix: true,
+    },
+  });
+  if (!admin) throw new AppError('管理员不存在', 404);
+  return success(c, { admin, authMethod: c.get('authMethod') });
 });
 
 authRoutes.post('/logout', async (c) => {

@@ -21,6 +21,7 @@ import {
   createArticle,
   deleteArticle,
   getAdminArticleById,
+  getAdminArticleBySlug,
   getAdminArticleStats,
   listAdminArticles,
   updateArticle,
@@ -126,6 +127,12 @@ adminRoutes.get('/articles', async (c) => {
 adminRoutes.get('/articles/stats', async (c) => {
   const stats = await getAdminArticleStats();
   return success(c, stats);
+});
+
+adminRoutes.get('/articles/by-slug/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const article = await getAdminArticleBySlug(slug);
+  return success(c, article);
 });
 
 adminRoutes.get('/articles/:id', async (c) => {
