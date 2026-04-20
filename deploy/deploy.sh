@@ -39,12 +39,14 @@ check_requirements() {
   log "环境检查通过"
 }
 
-# 拉取最新代码（首次自动 clone）
+# 拉取最新代码（首次自动 clone；后续强制同步 origin/master，避免工作区漂移导致 merge 失败）
 pull_code() {
   log "拉取最新代码..."
   if [ -d "$REPO_DIR/.git" ]; then
     cd "$REPO_DIR"
-    git pull origin master
+    git fetch origin master
+    git reset --hard origin/master
+    git clean -fd
   else
     log "首次部署，克隆仓库..."
     git clone https://github.com/ZoraZora59/zora-blog.git "$REPO_DIR"
@@ -110,12 +112,19 @@ migrate_database() {
   log "数据库迁移完成"
 }
 
-# 迁移历史本地图片到七牛云
+# 迁移历史本地图片到七牛云（非致命：未配置七牛或迁移失败时仅告警，不中断部署）
 migrate_legacy_media() {
   log "迁移历史本地图片到七牛云..."
   cd "$BACKEND_DIR"
-  npm run media:migrate-to-qiniu
-  log "历史本地图片迁移完成"
+  if [ -z "${QINIU_ACCESS_KEY:-}" ] && ! grep -q '^QINIU_ACCESS_KEY=' .env 2>/dev/null; then
+    warn "未配置 QINIU_ACCESS_KEY，跳过本地图片迁移"
+    return 0
+  fi
+  if npm run media:migrate-to-qiniu; then
+    log "历史本地图片迁移完成"
+  else
+    warn "历史本地图片迁移失败，继续部署（请稍后手动排查）"
+  fi
 }
 
 # 重启服务
