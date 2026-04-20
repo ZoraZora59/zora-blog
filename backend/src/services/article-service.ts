@@ -473,6 +473,19 @@ export async function getAdminArticleById(id: number) {
   return serializeArticle(article as ArticleRecord);
 }
 
+export async function getAdminArticleBySlug(slug: string) {
+  const article = await prisma.article.findUnique({
+    where: { slug },
+    include: articleInclude,
+  });
+
+  if (!article) {
+    throw new AppError('文章不存在', 404);
+  }
+
+  return serializeArticle(article as ArticleRecord);
+}
+
 export async function createArticle(adminId: number, input: ArticleInput) {
   const title = (input.title ?? '').trim();
   if (!title) {
@@ -528,12 +541,30 @@ export async function updateArticle(id: number, input: ArticleInput) {
     throw new AppError('标题不能为空');
   }
 
+  const contentChanged = input.content !== undefined;
   const content = input.content ?? existing.content;
   const status = normalizeStatus(input.status ?? existing.status.toLowerCase());
   const categoryId = await resolveCategoryId(input.categoryId ?? existing.categoryId);
-  const tagIds = await resolveTagIds(input.tagIds, input.tags);
   const topicIds = input.topicIds;
   const slug = await buildArticleSlug(title, input.slug ?? existing.slug, id);
+
+  const excerpt = (() => {
+    if (input.excerpt !== undefined) {
+      return input.excerpt?.trim() || buildExcerpt(content);
+    }
+    if (contentChanged) {
+      return buildExcerpt(content);
+    }
+    return existing.excerpt;
+  })();
+
+  const coverImage =
+    input.coverImage === undefined
+      ? existing.coverImage
+      : input.coverImage?.trim() || null;
+
+  const tagsProvided = input.tagIds !== undefined || input.tags !== undefined;
+  const tagIds = tagsProvided ? await resolveTagIds(input.tagIds, input.tags) : null;
 
   return prisma.$transaction(async (tx) => {
     await tx.article.update({
@@ -542,8 +573,8 @@ export async function updateArticle(id: number, input: ArticleInput) {
         title,
         slug,
         content,
-        excerpt: input.excerpt?.trim() || buildExcerpt(content),
-        coverImage: input.coverImage?.trim() || null,
+        excerpt,
+        coverImage,
         status,
         categoryId,
         publishedAt:
@@ -553,10 +584,12 @@ export async function updateArticle(id: number, input: ArticleInput) {
       },
     });
 
-    await tx.articleTag.deleteMany({
-      where: { articleId: id },
-    });
-    await connectArticleTags(tx, id, tagIds);
+    if (tagIds !== null) {
+      await tx.articleTag.deleteMany({
+        where: { articleId: id },
+      });
+      await connectArticleTags(tx, id, tagIds);
+    }
 
     if (topicIds !== undefined) {
       await connectArticleTopics(tx, id, topicIds);
