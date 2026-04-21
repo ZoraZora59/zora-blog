@@ -1,17 +1,17 @@
 ---
 name: zora-blog
-description: Manage Zora Blog (zorazora.cn) articles, categories, tags, topics, and comments through the `zora-blog` CLI or `@zora-blog/mcp` MCP server. Use whenever the user mentions 博客 / Zora Blog / zorazora / 发文章 / 管理文章 / 博客评论审核 / 上传博客图片, or asks to draft, publish, edit, pull, or moderate content on this specific blog. Covers configuration, frontmatter schema, image-upload pipeline, and tool selection (CLI vs MCP).
+description: Manage Zora Blog articles, categories, tags, topics, and comments through the `zora-blog` CLI or `@zora-blog/mcp` MCP server. Use whenever the user mentions 博客 / Zora Blog / 发文章 / 管理文章 / 博客评论审核 / 上传博客图片, or asks to draft, publish, edit, pull, or moderate content on this specific blog. Covers configuration, frontmatter schema, image-upload pipeline, and tool selection (CLI vs MCP).
 user-invocable: true
 ---
 
 # Zora Blog Skill
 
-Operate the author's personal blog at https://www.zorazora.cn through two equivalent tools built on the same SDK:
+Operate the author's personal blog through two equivalent tools built on the same SDK:
 
 - **`zora-blog` CLI** — shell companion, think `gh` for this blog. Best for local authoring workflows (write a `.md` file → publish).
 - **`@zora-blog/mcp` MCP server** — exposes the same surface as MCP tools. Best when the agent is driving the workflow end-to-end inside a chat.
 
-Both wrap the backend REST API (`https://www.zorazora.cn/api`) with Bearer token auth. Source: `packages/cli`, `packages/mcp`, `packages/sdk` in the monorepo.
+Both wrap the backend REST API (`<BLOG_API_BASE_URL>`) with Bearer token auth. Source: `packages/cli`, `packages/mcp`, `packages/sdk` in the monorepo.
 
 ## When to use which
 
@@ -35,7 +35,7 @@ If both are viable, default to **CLI** when the user already has a local `.md` f
    npm run build:sdk && npm run build:cli && npm run build:mcp
    ```
 2. **API token** — format `zora_xxx`. Admin-only. Ask the user to generate one from the blog admin panel if missing.
-3. **Base URL** — production is `https://www.zorazora.cn/api`. Local dev is `http://localhost:3001/api`.
+3. **Base URL** — configure from environment (for example `https://blog.example.com/api`). Local dev is typically `http://localhost:3001/api`.
 
 ## CLI setup
 
@@ -47,9 +47,9 @@ zora-blog article list
 
 ### Non-interactive
 ```bash
-zora-blog auth login --url https://www.zorazora.cn/api --token zora_xxx
+zora-blog auth login --url https://blog.example.com/api --token zora_xxx
 # or env (overrides config file):
-export ZORA_BASE_URL=https://www.zorazora.cn/api
+export ZORA_BASE_URL=https://blog.example.com/api
 export ZORA_TOKEN=zora_xxx
 ```
 
@@ -87,9 +87,9 @@ Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_conf
   "mcpServers": {
     "zora-blog": {
       "command": "node",
-      "args": ["/abs/path/to/zora-blog/packages/mcp/dist/index.js"],
-      "env": {
-        "ZORA_BASE_URL": "https://www.zorazora.cn/api",
+        "args": ["/abs/path/to/zora-blog/packages/mcp/dist/index.js"],
+        "env": {
+        "ZORA_BASE_URL": "https://blog.example.com/api",
         "ZORA_TOKEN": "zora_xxx"
       }
     }
@@ -146,7 +146,7 @@ Both CLI and MCP (stdio) perform the same automatic flow:
 1. Parse frontmatter → process `frontmatter.cover`.
 2. Walk Markdown AST → collect local `![](...)` references.
 3. Skip `http(s)://` URLs.
-4. For each local path: hash (SHA-256) → check `.zora-cache.json` sibling → if unchanged, reuse cached CDN URL; else upload via `/admin/upload` to 七牛 CDN (`https://cdn.zorazora.cn/zora_blog/{prod|non-prod}/...`).
+4. For each local path: hash (SHA-256) → check `.zora-cache.json` sibling → if unchanged, reuse cached CDN URL; else upload via `/admin/upload` to CDN (`<CDN_BASE_URL>/zora_blog/{prod|non-prod}/...`).
 5. Rewrite URLs in-memory and submit.
 
 Flags: `--dry-run` (scan only, no upload, no submit), `--no-cache` (force re-upload).
