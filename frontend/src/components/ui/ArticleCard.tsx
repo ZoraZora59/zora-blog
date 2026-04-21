@@ -15,33 +15,35 @@ export default function ArticleCard({
   variant = 'standard',
 }: ArticleCardProps) {
   const featured = variant === 'featured';
+  const hasCover = Boolean(article.coverImage);
 
   // featured 卡片的封面更大（右侧列 16:10），standard 卡片固定 16:9。
   // 宽度用一个合理上限估算，CDN 会按 DPR 返回合适的缩略图。
   const thumbSrc = featured
     ? resolveMediaThumbnail(article.coverImage, { width: 720, height: 450, quality: 82 })
     : resolveMediaThumbnail(article.coverImage, { width: 640, height: 360, quality: 80 });
+  const shouldShowCover = hasCover && Boolean(thumbSrc);
 
   return (
     <Link
       className={cn(
         'group flex w-full flex-col overflow-hidden rounded-xl bg-surface-raised shadow-sm transition-shadow duration-200 hover:shadow-md',
-        featured
+        featured && shouldShowCover
           ? 'h-full lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.85fr)]'
           : 'h-full',
       )}
       to={`/articles/${article.slug}`}
     >
-      {/* 封面：容器强制纵横比，图片 absolute 填满 + object-cover，彻底避免被原图比例撑开 */}
-      <div
-        className={cn(
-          'relative w-full shrink-0 overflow-hidden bg-surface-sunken',
-          featured
-            ? 'aspect-[16/9] lg:aspect-auto lg:h-full lg:min-h-[280px]'
-            : 'aspect-[16/9]',
-        )}
-      >
-        {thumbSrc ? (
+      {shouldShowCover ? (
+        // 封面：容器强制纵横比，图片 absolute 填满 + object-cover，彻底避免被原图比例撑开
+        <div
+          className={cn(
+            'relative w-full shrink-0 overflow-hidden bg-surface-sunken',
+            featured
+              ? 'aspect-[16/9] lg:aspect-auto lg:h-full lg:min-h-[280px]'
+              : 'aspect-[16/9]',
+          )}
+        >
           <img
             alt={article.title}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
@@ -50,18 +52,14 @@ export default function ArticleCard({
             referrerPolicy="no-referrer"
             src={thumbSrc}
           />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-surface-sunken to-surface-raised text-xs text-subtle">
-            暂无封面
-          </div>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       {/* 正文：flex 占满剩余高度，标题/摘要 line-clamp，保证卡片整体高度一致 */}
       <div
         className={cn(
           'flex min-w-0 flex-1 flex-col gap-4 p-6',
-          featured ? 'justify-between' : '',
+          featured || !shouldShowCover ? 'justify-between' : '',
         )}
       >
         <div className="space-y-3">
@@ -87,7 +85,7 @@ export default function ArticleCard({
           <p
             className={cn(
               'text-sm leading-relaxed text-muted',
-              featured ? 'line-clamp-3' : 'line-clamp-2',
+              featured || !shouldShowCover ? 'line-clamp-3' : 'line-clamp-2',
             )}
           >
             {article.excerpt || '继续阅读完整内容。'}
