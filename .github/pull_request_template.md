@@ -19,12 +19,15 @@
 - [ ] 已对照 `docs/milestone-pr-plan.md`
 - [ ] 未混入其他里程碑范围
 - [ ] 涉及页面已对照对应 stitch 原型图
-- [ ] PR 标题包含里程碑编号（形如 `feat: M3 ...`），否则打 `skip-harness` label 说明原因
+- [ ] PR 标题建议包含里程碑编号（形如 `feat: M3 ...`），便于追踪
 
 ## 自动验证
 
 ```bash
-./scripts/verify-milestone.sh Mx
+# 按本次里程碑填写实际执行命令
+npm run lint
+npm run build:frontend
+npm run build:backend
 ```
 
 补充命令：

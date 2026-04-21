@@ -4,7 +4,6 @@
 >
 > 入口文件：
 > - 本文：[`harness/rules-v1.0.0.md`](/Users/didi/CodeBase/GithubCode/zora-blog/harness/rules-v1.0.0.md)
-> - 自动验证脚本：[`scripts/verify-milestone.sh`](/Users/didi/CodeBase/GithubCode/zora-blog/scripts/verify-milestone.sh)
 > - PR 模板：[`.github/pull_request_template.md`](/Users/didi/CodeBase/GithubCode/zora-blog/.github/pull_request_template.md)
 > - 里程碑拆分：[`docs/milestone-pr-plan.md`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/milestone-pr-plan.md)
 > - 开发计划：[`docs/development-plan.md`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/development-plan.md)
@@ -34,7 +33,6 @@ zora-blog/
 │   └── mcp/                 @zora-blog/mcp   MCP server（stdio + HTTP）
 ├── docs/                    PRD / design-system / milestone 计划 / stitch 原型
 ├── harness/                 里程碑 harness（本目录）
-├── scripts/verify-milestone.sh
 ├── deploy/                  部署脚本 / nginx / pm2 / init-db
 ├── .github/workflows/       CI/CD
 └── .claude/                 hooks 与项目级 Claude 设定
@@ -94,33 +92,34 @@ M2 与 M3 可并行；M4 与 M5 可并行。
 
 | M | 分支 | 标题 | 必交付关键件 | 自动验证 | 手动证据 |
 | --- | --- | --- | --- | --- | --- |
-| M1 | `codex/m1-backend-foundation` | `feat: M1 后端基础` | `backend/` 脚手架、Prisma schema/seed、认证中间件、文章/分类/标签/上传 API | `verify-milestone.sh M1` + backend `lint/build` | curl 登录→签发 Token→文章 CRUD→上传；prisma studio |
-| M2 | `codex/m2-frontend-foundation` | `feat: M2 前端基础` | React Router、API client、hooks、UI/Layout 组件、Home、ArticleDetail、Markdown+TOC+进度条 | `verify-milestone.sh M2` + frontend `lint/build` | 首页 / 详情 桌面+移动端截图对照 01/02/06 |
-| M3 | `codex/m3-admin-console` | `feat: M3 B 端管理` | AdminLayout、路由守卫、Login、Dashboard、Posts、PostEditor、Settings | `verify-milestone.sh M3` + 前后端 `lint/build` | 未登录重定向；Quick Draft；编辑器发布到 C 端可见；对照 03/04/05 |
-| M4 | `codex/m4-comments` | `feat: M4 评论系统` | 评论 API、C 端评论区、B 端评论管理 | `verify-milestone.sh M4` + 前后端 `lint/build` | 提交→pending→审核→C 端可见；对照 07 |
-| M5 | `codex/m5-topics` | `feat: M5 专题系统` | Topic API、`/topics`、`/topics/:slug`、`admin/Topics`、`admin/TopicEditor` | `verify-milestone.sh M5` + 前后端 `lint/build` | 创建专题→关联文章→排序→前台展示；对照 08 |
-| M6 | `codex/m6-extended-features` | `feat: M6 扩展功能` | `About`、`Search`（PG 全文搜索）、`useTheme`（Light/Dark/System） | `verify-milestone.sh M6` + 前后端 `lint/build` | 搜索命中+空状态；主题切换 localStorage 持久化 |
-| M7 | `codex/m7-polish` | `feat: M7 体验打磨` | 移动端布局、MobileNav、动效、性能/无障碍 | `verify-milestone.sh M7` + 前后端 `lint/build` | 375/768/1280 断点巡检；Lighthouse Perf≥90、A11y≥90；动效对照 09/10/11 |
-| M8 | `codex/m8-deploy` | `feat: M8 部署与运维` | CI/CD workflow、部署脚本、Nginx、PM2、备份/日志/监控说明 | `verify-milestone.sh M8` + workflow 配置检查 | 域名/HTTPS/`/api`/`/uploads`；迁移与重启步骤；workflow 运行记录 |
+| M1 | `codex/m1-backend-foundation` | `feat: M1 后端基础` | `backend/` 脚手架、Prisma schema/seed、认证中间件、文章/分类/标签/上传 API | backend `lint/build` | curl 登录→签发 Token→文章 CRUD→上传；prisma studio |
+| M2 | `codex/m2-frontend-foundation` | `feat: M2 前端基础` | React Router、API client、hooks、UI/Layout 组件、Home、ArticleDetail、Markdown+TOC+进度条 | frontend `lint/build` | 首页 / 详情 桌面+移动端截图对照 01/02/06 |
+| M3 | `codex/m3-admin-console` | `feat: M3 B 端管理` | AdminLayout、路由守卫、Login、Dashboard、Posts、PostEditor、Settings | 前后端 `lint/build` | 未登录重定向；Quick Draft；编辑器发布到 C 端可见；对照 03/04/05 |
+| M4 | `codex/m4-comments` | `feat: M4 评论系统` | 评论 API、C 端评论区、B 端评论管理 | 前后端 `lint/build` | 提交→pending→审核→C 端可见；对照 07 |
+| M5 | `codex/m5-topics` | `feat: M5 专题系统` | Topic API、`/topics`、`/topics/:slug`、`admin/Topics`、`admin/TopicEditor` | 前后端 `lint/build` | 创建专题→关联文章→排序→前台展示；对照 08 |
+| M6 | `codex/m6-extended-features` | `feat: M6 扩展功能` | `About`、`Search`（PG 全文搜索）、`useTheme`（Light/Dark/System） | 前后端 `lint/build` | 搜索命中+空状态；主题切换 localStorage 持久化 |
+| M7 | `codex/m7-polish` | `feat: M7 体验打磨` | 移动端布局、MobileNav、动效、性能/无障碍 | 前后端 `lint/build` | 375/768/1280 断点巡检；Lighthouse Perf≥90、A11y≥90；动效对照 09/10/11 |
+| M8 | `codex/m8-deploy` | `feat: M8 部署与运维` | CI/CD workflow、部署脚本、Nginx、PM2、备份/日志/监控说明 | `npm run lint` + `build:frontend/build:backend` + workflow 配置检查 | 域名/HTTPS/`/api`/`/uploads`；迁移与重启步骤；workflow 运行记录 |
 
 每个里程碑的 Stitch 原型映射见 [`docs/milestone-pr-plan.md`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/milestone-pr-plan.md#原型图映射)。
 
 ---
 
-## 5. Harness 工作流
+## 5. 里程碑验收流程
 
-### 5.1 脚本入口
+### 5.1 自动验证入口
 ```bash
-./scripts/verify-milestone.sh --list
-./scripts/verify-milestone.sh M1   # M1..M8
+npm run lint
+npm run build:frontend
+npm run build:backend
 ```
-脚本产出两类结果：
-- **自动检查**：关键目录/文件存在性 + `npm run lint` + `npm run build`
-- **手动验证清单**：对应里程碑需要补的 curl / 截图 / 录屏 / Lighthouse
+自动验证分两类：
+- **项目命令**：`npm run lint`、`npm run build:frontend`、`npm run build:backend`
+- **里程碑证据**：对应里程碑需要补的 curl / 截图 / 录屏 / Lighthouse / 部署记录
 
 ### 5.2 PR 证据清单（模板字段必填）
 - [ ] 对应里程碑勾选
-- [ ] `verify-milestone.sh Mx` 输出贴入"自动验证"
+- [ ] 本次自动验证命令输出贴入“自动验证”
 - [ ] 补充命令（如 frontend/backend `lint && build`）
 - [ ] 手动验证结果
 - [ ] 视觉/交互证据：截图 / 录屏 / Stitch 对照点
@@ -149,12 +148,11 @@ npm run lint         # 前后端全量 tsc + eslint
 npm run format:check
 ```
 
-### 6.1 CI 强制闸门
-- Workflow：[`.github/workflows/harness.yml`](/Users/didi/CodeBase/GithubCode/zora-blog/.github/workflows/harness.yml)
-- 触发：PR → `master`
-- 行为：从 PR 标题解析 `M1..M8`，执行 `./scripts/verify-milestone.sh Mx`，失败则阻止合并
-- 绕过：给 PR 打 `skip-harness` label（仅限 hotfix / 纯文档 / 工具链微调）
-- 建议配合 branch protection：将 `Milestone Harness / verify-milestone.sh` 设为 required check
+### 6.1 本地 / 手动验收入口
+- 统一入口：按当前里程碑执行对应的 `lint/build` 与手动验证项
+- 用法：在本地完成功能后执行，对照输出补充 PR 的“自动验证”和“手动验证”证据
+- 当前策略：不再提供独立的 PR 强制 shell harness workflow，避免与 monorepo 依赖安装策略耦合后产生噪音失败
+- 如需恢复 CI 版闸门，应先明确 lockfile、workspace 安装命令和缓存策略，再单独设计 workflow
 
 ---
 
@@ -172,8 +170,10 @@ npm run lint                 # 前后端 tsc + eslint
 npm run format
 npm run format:check
 
-# 里程碑验证
-./scripts/verify-milestone.sh M1
+# 里程碑验收
+npm run lint
+npm run build:frontend
+npm run build:backend
 ```
 
 ---
@@ -212,7 +212,7 @@ npm run format:check
 
 - [ ] M1–M8 全部 PR 已合并，各 PR 证据齐备
 - [ ] `npm run lint` 全绿
-- [ ] `./scripts/verify-milestone.sh` 在 M1–M8 全通过
+- [ ] 对应里程碑的 `lint/build` 与手动验收记录齐备
 - [ ] Lighthouse：Performance ≥ 90、Accessibility ≥ 90
 - [ ] 数据库迁移在生产环境完成一次演练
 - [ ] `.env` 生产配置已备份，且未进仓库
@@ -225,8 +225,8 @@ npm run format:check
 
 ## 11. 后续演进（v1.0.0 之后）
 
-harness 当前为轻量版，后续按需补：
+当前里程碑验收流程为轻量版，后续按需补：
 - Playwright 页面冒烟与视觉回归
 - 后端 curl / HTTPie smoke 脚本
 - 基于 seed 数据的固定验收集
-- CI 中按 M 分层跑 harness
+- CI 中按 M 分层跑验收

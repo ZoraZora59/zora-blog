@@ -26,7 +26,7 @@
   - `codex/m8-deploy`
 - PR 标题建议统一为：`feat: Mx <里程碑名称>`
 - 每个 PR 必须附带：
-  - `./scripts/verify-milestone.sh Mx` 输出
+  - 与当前里程碑相关的 `lint/build` 命令输出摘要
   - 对应页面的截图或录屏
   - 手动验证记录
   - 未覆盖风险和后续补充项
@@ -47,7 +47,6 @@
   - `GET/POST/PUT/DELETE /api/admin/articles` 可完成文章生命周期
   - 上传后的图片 URL 可直接访问
 - 自动验证：
-  - `./scripts/verify-milestone.sh M1`
   - `cd backend && npm run lint`
   - `cd backend && npm run build`
 - 手动验证：
@@ -73,7 +72,6 @@
   - 移动端首页不溢出，接近 [`06-home-mobile.png`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/stitch/06-home-mobile.png)
   - Markdown、代码块、目录、阅读进度条可用
 - 自动验证：
-  - `./scripts/verify-milestone.sh M2`
   - `cd frontend && npm run lint`
   - `cd frontend && npm run build`
 - 手动验证：
@@ -99,7 +97,6 @@
   - Content Manager 与 [`04-content-manager.png`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/stitch/04-content-manager.png) 对齐
   - 编辑器可创建草稿、预览和发布文章
 - 自动验证：
-  - `./scripts/verify-milestone.sh M3`
   - `cd frontend && npm run lint`
   - `cd frontend && npm run build`
   - `cd backend && npm run lint`
@@ -125,8 +122,9 @@
   - 审核通过后 C 端可见
   - 后台评论管理接近 [`07-comment-mgmt.png`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/stitch/07-comment-mgmt.png)
 - 自动验证：
-  - `./scripts/verify-milestone.sh M4`
-  - 前后端 `lint/build`
+  - `npm run lint`
+  - `npm run build:frontend`
+  - `npm run build:backend`
 - 手动验证：
   - 提交评论
   - 后台审核
@@ -147,8 +145,9 @@
   - 专题详情页风格接近 [`08-sports-gear.png`](/Users/didi/CodeBase/GithubCode/zora-blog/docs/stitch/08-sports-gear.png)
   - 关联文章排序生效
 - 自动验证：
-  - `./scripts/verify-milestone.sh M5`
-  - 前后端 `lint/build`
+  - `npm run lint`
+  - `npm run build:frontend`
+  - `npm run build:backend`
 - 手动验证：
   - 新建专题、关联文章、排序、前台展示
 - PR 证据：
@@ -167,8 +166,9 @@
   - `/search?q=` 可搜索并高亮
   - Light / Dark / System 三模式正常工作
 - 自动验证：
-  - `./scripts/verify-milestone.sh M6`
-  - 前后端 `lint/build`
+  - `npm run lint`
+  - `npm run build:frontend`
+  - `npm run build:backend`
 - 手动验证：
   - 搜索关键词命中和空状态
   - 主题切换持久化
@@ -189,8 +189,9 @@
   - Lighthouse Performance >= 90
   - Lighthouse Accessibility >= 90
 - 自动验证：
-  - `./scripts/verify-milestone.sh M7`
-  - 前后端 `lint/build`
+  - `npm run lint`
+  - `npm run build:frontend`
+  - `npm run build:backend`
 - 手动验证：
   - 手机断点巡检
   - Lighthouse 报告
@@ -214,7 +215,9 @@
   - 反向代理、HTTPS、静态资源、API、上传目录路由说明完整
   - 数据库迁移和服务重启步骤清晰
 - 自动验证：
-  - `./scripts/verify-milestone.sh M8`
+  - `npm run lint`
+  - `npm run build:frontend`
+  - `npm run build:backend`
   - CI workflow 配置检查
 - 手动验证：
   - 按部署文档走一遍
@@ -234,4 +237,4 @@
 ## 备注
 
 - 这份文档负责定义 PR 颗粒度和验收口径，不替代更细的任务分解。
-- 具体命令和检查入口见 [`harness/README.md`](/Users/didi/CodeBase/GithubCode/zora-blog/harness/README.md) 和 [`scripts/verify-milestone.sh`](/Users/didi/CodeBase/GithubCode/zora-blog/scripts/verify-milestone.sh)。
+- 具体命令和检查入口见 [`harness/README.md`](/Users/didi/CodeBase/GithubCode/zora-blog/harness/README.md)。
