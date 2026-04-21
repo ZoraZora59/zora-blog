@@ -1,4 +1,5 @@
 import { CalendarDays, Eye } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Badge from '@/components/ui/Badge';
 import type { ArticleSummary } from '@/lib/api';
@@ -10,11 +11,22 @@ interface ArticleCardProps {
   variant?: 'featured' | 'standard';
 }
 
+const COVER_RATIO_MIN = 0.65;
+const COVER_RATIO_MAX = 1.35;
+const FEATURED_MEDIA_WIDTH_MIN = 0.42;
+const FEATURED_MEDIA_WIDTH_MAX = 0.62;
+const FEATURED_MEDIA_WIDTH_FALLBACK = 0.56;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export default function ArticleCard({
   article,
   variant = 'standard',
 }: ArticleCardProps) {
   const featured = variant === 'featured';
+  const [coverRatio, setCoverRatio] = useState<number | null>(null);
 
   // featured 卡片的封面更大（右侧列 16:10），standard 卡片固定 16:9。
   // 宽度用一个合理上限估算，CDN 会按 DPR 返回合适的缩略图。
@@ -22,14 +34,47 @@ export default function ArticleCard({
     ? resolveMediaThumbnail(article.coverImage, { width: 720, height: 450, quality: 82 })
     : resolveMediaThumbnail(article.coverImage, { width: 640, height: 360, quality: 80 });
 
+  useEffect(() => {
+    setCoverRatio(null);
+  }, [thumbSrc]);
+
+  // 根据封面宽高比调节 featured 卡片左侧图片列宽：
+  // - 竖图：图片列更窄，给文案更多空间
+  // - 横图：图片列更宽，充分利用横向信息
+  // 同时设置最小/最大边界，避免版式失衡。
+  const featuredMediaWidth = useMemo(() => {
+    if (!featured || !coverRatio) {
+      return FEATURED_MEDIA_WIDTH_FALLBACK;
+    }
+
+    // 0.65(偏竖) -> 0.42，1.35(偏横) -> 0.62
+    const normalized =
+      (coverRatio - COVER_RATIO_MIN) / (COVER_RATIO_MAX - COVER_RATIO_MIN);
+
+    return (
+      FEATURED_MEDIA_WIDTH_MIN +
+      clamp(normalized, 0, 1) * (FEATURED_MEDIA_WIDTH_MAX - FEATURED_MEDIA_WIDTH_MIN)
+    );
+  }, [coverRatio, featured]);
+
+  const shouldContainExtremeCover =
+    featured &&
+    coverRatio !== null &&
+    (coverRatio < COVER_RATIO_MIN || coverRatio > COVER_RATIO_MAX);
+
   return (
     <Link
       className={cn(
         'group flex w-full flex-col overflow-hidden rounded-xl bg-surface-raised shadow-sm transition-shadow duration-200 hover:shadow-md',
-        featured
-          ? 'h-full lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.85fr)]'
-          : 'h-full',
+        featured ? 'h-full lg:grid' : 'h-full',
       )}
+      style={
+        featured
+          ? {
+              gridTemplateColumns: `minmax(0, ${featuredMediaWidth}fr) minmax(280px, ${1 - featuredMediaWidth}fr)`,
+            }
+          : undefined
+      }
       to={`/articles/${article.slug}`}
     >
       {/* 封面：容器强制纵横比，图片 absolute 填满 + object-cover，彻底避免被原图比例撑开 */}
@@ -44,9 +89,27 @@ export default function ArticleCard({
         {thumbSrc ? (
           <img
             alt={article.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className={cn(
+              'absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-[1.03]',
+              shouldContainExtremeCover ? 'object-contain p-2' : 'object-cover',
+            )}
             decoding="async"
             loading="lazy"
+            onLoad={(event) => {
+              const { naturalWidth, naturalHeight } = event.currentTarget;
+
+              if (naturalWidth > 0 && naturalHeight > 0) {
+                const nextRatio = naturalWidth / naturalHeight;
+
+                setCoverRatio((current) => {
+                  if (current !== null && Math.abs(current - nextRatio) < 0.001) {
+                    return current;
+                  }
+
+                  return nextRatio;
+                });
+              }
+            }}
             referrerPolicy="no-referrer"
             src={thumbSrc}
           />
