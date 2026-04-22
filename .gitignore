@@ -40,6 +40,10 @@ Thumbs.db
 backend/uploads/*
 !backend/uploads/.gitkeep
 
+# MaxMind GeoLite2 mmdb 数据库（手动下载，需 MAXMIND_LICENSE_KEY）
+backend/data/*.mmdb
+backend/data/*.tar.gz
+
 # Logs
 *.log
 logs/

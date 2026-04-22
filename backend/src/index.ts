@@ -10,7 +10,10 @@ import { env } from './lib/env.js';
 import { authRoutes } from './routes/auth.js';
 import { publicRoutes } from './routes/public.js';
 import { adminRoutes } from './routes/admin.js';
+import { trackRoutes } from './routes/track.js';
 import { ensureUploadsDir, uploadsDir, allowedMimeTypes } from './lib/uploads.js';
+import { preloadGeoip } from './lib/geoip.js';
+import { startAnalyticsJobs } from './jobs/analytics-aggregator.js';
 
 const app = new Hono();
 
@@ -65,6 +68,7 @@ app.get('/uploads/:filename', async (c) => {
 });
 
 app.route('/api/auth', authRoutes);
+app.route('/api/track', trackRoutes);
 app.route('/api', publicRoutes);
 app.route('/api/admin', adminRoutes);
 
@@ -72,6 +76,8 @@ app.notFound((c) => success(c, null, 'Not Found', 404));
 app.onError(handleError);
 
 await ensureUploadsDir();
+await preloadGeoip();
+startAnalyticsJobs();
 
 serve(
   {

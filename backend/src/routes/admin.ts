@@ -34,6 +34,7 @@ import {
   type CommentModerateAction,
 } from '../services/comment-service.js';
 import { getDashboardStats } from '../services/dashboard-service.js';
+import { adminAnalyticsRoutes } from './admin-analytics.js';
 import {
   createTopic,
   deleteTopic,
@@ -51,6 +52,8 @@ import type { AppBindings } from '../lib/types.js';
 export const adminRoutes = new Hono<AppBindings>();
 
 adminRoutes.use('*', requireAuth);
+
+adminRoutes.route('/analytics', adminAnalyticsRoutes);
 
 adminRoutes.get('/dashboard', async (c) => {
   const stats = await getDashboardStats();

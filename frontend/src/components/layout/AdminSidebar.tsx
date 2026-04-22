@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   ChevronLeft,
   FileText,
   LayoutDashboard,
@@ -12,9 +13,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { resolveMediaUrl } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-// B 端侧边栏：Dashboard / Posts / Comments / Topics / Settings
+// B 端侧边栏：Dashboard / Analytics / Posts / Comments / Topics / Settings
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: LayoutDashboard, end: true },
+  { label: '数据分析', to: '/admin/analytics', icon: BarChart3 },
   { label: '文章管理', to: '/admin/posts', icon: FileText },
   { label: '评论管理', to: '/admin/comments', icon: MessageSquare },
   { label: '专题管理', to: '/admin/topics', icon: Sparkles },

@@ -139,6 +139,166 @@ model TopicArticle {
   @@map("topic_articles")
 }
 
+// ===== 数据分析模块 (M9) =====
+// 详细设计见 docs/analytics-design.md
+
+enum PageType {
+  HOME     @map("home")
+  ARTICLE  @map("article")
+  CATEGORY @map("category")
+  TOPIC    @map("topic")
+  ABOUT    @map("about")
+  SEARCH   @map("search")
+  OTHER    @map("other")
+}
+
+enum ReferrerType {
+  DIRECT   @map("direct")
+  SEARCH   @map("search")
+  SOCIAL   @map("social")
+  EXTERNAL @map("external")
+  INTERNAL @map("internal")
+}
+
+// 原始访问事件表（保留 ANALYTICS_PV_RETENTION_DAYS 天后由 cron 清理）
+model PageView {
+  id             BigInt       @id @default(autoincrement())
+
+  // 路径与业务关联
+  path           String
+  pageType       PageType     @default(OTHER)
+  articleId      Int?
+  categoryId     Int?
+  topicId        Int?
+
+  // 访客与会话
+  visitorId      String       @db.VarChar(64)
+  sessionId      String       @db.VarChar(64)
+  isNewVisitor   Boolean      @default(false)
+  isNewSession   Boolean      @default(false)
+
+  // 来源
+  referrer       String?      @db.VarChar(1024)
+  referrerHost   String?
+  referrerType   ReferrerType @default(DIRECT)
+  utmSource      String?      @db.VarChar(256)
+  utmMedium      String?      @db.VarChar(256)
+  utmCampaign    String?      @db.VarChar(256)
+
+  // 设备 / 客户端
+  userAgent      String       @db.VarChar(512)
+  device         String?
+  os             String?
+  osVersion      String?
+  browser        String?
+  browserVersion String?
+  screenWidth    Int?
+  screenHeight   Int?
+  viewportWidth  Int?
+  language       String?
+
+  // 地理（IP 不留原文）
+  ipHash         String       @db.VarChar(64)
+  country        String?
+  region         String?
+  city           String?
+  timezone       String?
+
+  // 标记位
+  isBot          Boolean      @default(false)
+  isAdmin        Boolean      @default(false)
+
+  createdAt      DateTime     @default(now())
+
+  @@index([createdAt])
+  @@index([articleId, createdAt])
+  @@index([categoryId, createdAt])
+  @@index([country, createdAt])
+  @@index([referrerHost, createdAt])
+  @@index([visitorId, createdAt])
+  @@index([sessionId])
+  @@map("page_views")
+}
+
+// 站点级日聚合
+model DailySiteStat {
+  date               DateTime @id @db.Date
+  pv                 Int      @default(0)
+  uv                 Int      @default(0)
+  sessions           Int      @default(0)
+  newVisitors        Int      @default(0)
+  bounceRate         Float?
+  avgPagesPerSession Float?
+  updatedAt          DateTime @updatedAt
+
+  @@map("daily_site_stats")
+}
+
+// 文章级日聚合
+model DailyArticleStat {
+  date      DateTime @db.Date
+  articleId Int
+  pv        Int      @default(0)
+  uv        Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([date, articleId])
+  @@index([articleId, date])
+  @@map("daily_article_stats")
+}
+
+// 来源（referrerHost）日聚合
+model DailyReferrerStat {
+  date         DateTime     @db.Date
+  referrerHost String
+  referrerType ReferrerType @default(DIRECT)
+  pv           Int          @default(0)
+  uv           Int          @default(0)
+  updatedAt    DateTime     @updatedAt
+
+  @@id([date, referrerHost])
+  @@map("daily_referrer_stats")
+}
+
+// 地域日聚合（region 为空字符串时表示按国家聚合）
+model DailyGeoStat {
+  date      DateTime @db.Date
+  country   String
+  region    String   @default("")
+  pv        Int      @default(0)
+  uv        Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([date, country, region])
+  @@map("daily_geo_stats")
+}
+
+// 设备日聚合
+model DailyDeviceStat {
+  date      DateTime @db.Date
+  device    String
+  os        String   @default("")
+  browser   String   @default("")
+  pv        Int      @default(0)
+  uv        Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([date, device, os, browser])
+  @@map("daily_device_stats")
+}
+
+// 分类日聚合
+model DailyCategoryStat {
+  date       DateTime @db.Date
+  categoryId Int
+  pv         Int      @default(0)
+  uv         Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@id([date, categoryId])
+  @@map("daily_category_stats")
+}
+
 // 单行站点设置：固定 id = 1，供前端展示博客标题/描述/Logo 等
 model SiteSettings {
   id                       Int      @id @default(1)

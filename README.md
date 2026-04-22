@@ -73,4 +73,12 @@ npm run build:mcp          # 构建 MCP server
 
 ## 部署
 
-TODO
+详见 [docs/deploy-guide.md](docs/deploy-guide.md)。当前生产环境：https://www.zorazora.cn
+
+## 文档
+
+- [产品需求 (PRD)](docs/PRD.md)
+- [设计系统](docs/design-system.md)
+- [开发计划 (M1-M9)](docs/development-plan.md)
+- [数据分析模块设计](docs/analytics-design.md)
+- [部署指南](docs/deploy-guide.md)

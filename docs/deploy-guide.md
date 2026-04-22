@@ -94,6 +94,12 @@ QINIU_SECRET_KEY="你的七牛 SK"
 QINIU_BUCKET="zora-markdown"
 QINIU_ROOT_PREFIX="/zora_blog"
 QINIU_PUBLIC_BASE_URL="https://cdn.zorazora.cn"
+
+# 数据分析（M9）
+ANALYTICS_SALT="openssl rand -hex 32 生成的 64 位随机串"
+ANALYTICS_PV_RETENTION_DAYS=90
+MAXMIND_DB_PATH="./data/GeoLite2-City.mmdb"
+ANALYTICS_AGGREGATE_CRON="*/5 * * * *"
 ```
 
 说明：
@@ -199,8 +205,11 @@ nginx -t && nginx -s reload
 
 在宝塔面板 → 网站 → SSL 中：
 - 选择 Let's Encrypt
+- 申请证书时同时勾选 `www.zorazora.cn` 和 `zorazora.cn`
+- 如果使用通配符证书，必须额外包含 `zorazora.cn`；`*.zorazora.cn` 不能匹配根域名
 - 申请/续期证书
 - 开启强制 HTTPS
+- 建议将根域名 `zorazora.cn` 301 跳转到 `https://www.zorazora.cn`
 
 ## 四、验证部署
 
@@ -242,28 +251,45 @@ cd /www/wwwroot/zora-blog
 ### 5.2 查看日志
 
 ```bash
-# 后端日志
+# 后端日志（pm2 实时输出）
 pm2 logs zora-blog-backend
+
+# 后端日志文件（已落盘，便于历史检索）
+tail -f /www/wwwlogs/zora-blog-backend.out.log     # 访问日志 + 业务 warn
+tail -f /www/wwwlogs/zora-blog-backend.error.log   # 未捕获错误 + console.error
 
 # Nginx 日志
 tail -f /www/wwwlogs/zora-blog.access.log
 tail -f /www/wwwlogs/zora-blog.error.log
 ```
 
-### 5.3 数据库备份
+应用层日志格式（[`backend/src/middleware/logger.ts`](../backend/src/middleware/logger.ts) 输出）：
 
-在宝塔面板 → 计划任务 中添加：
-- 任务类型：备份数据库
-- 执行周期：每天凌晨 3 点
-- 备份到：本地 + 远程存储
+```
+GET /api/articles -> 200 (248ms)
+POST /api/auth/login -> 401 (5ms)
+```
 
-### 5.4 监控告警
+### 5.3 日志轮转（pm2-logrotate）
 
-宝塔面板 → 监控 中可查看：
-- CPU 使用率
-- 内存使用率
-- 磁盘空间
-- 可设置告警阈值
+pm2 默认不做日志轮转，文件会无限增长。**首次部署后执行一次**：
+
+```bash
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 10M       # 单文件最大 10MB
+pm2 set pm2-logrotate:retain 7           # 保留最近 7 个文件
+pm2 set pm2-logrotate:compress true      # 老文件 gzip 压缩
+pm2 set pm2-logrotate:rotateInterval '0 0 * * *'  # 每天 0 点强制轮转一次
+```
+
+验证：
+
+```bash
+pm2 conf pm2-logrotate           # 查看当前配置
+ls -lh /www/wwwlogs/zora-blog-backend.*   # 一段时间后应能看到带日期后缀的归档文件
+```
+
+> **本里程碑暂未实现**：进程存活监控、数据库备份。后续按需另立任务。
 
 ## 六、故障排查
 
@@ -285,7 +311,19 @@ tail -f /www/wwwlogs/zora-blog.error.log
 - 检查 Nginx root 配置
 - 检查浏览器控制台错误
 
-### 6.4 七牛图片返回 401 / 无法显示
+### 6.4 数据分析看板没有地理数据
+
+- 检查 `backend/data/GeoLite2-City.mmdb` 是否存在：`ls -lh backend/data/`
+- 缺失时执行：
+  ```bash
+  cd /www/wwwroot/zora-blog
+  MAXMIND_LICENSE_KEY=你的KEY ./repo/scripts/update-geoip.sh
+  ```
+- 检查文件大小是否 ≥ 70MB（小于这个值通常是下载失败）
+- 重启 backend：`pm2 restart zora-blog-backend`，启动日志应能看到 `[geoip] MaxMind GeoLite2 已加载`
+- 文件超过 45 天未更新会在部署时给出警告，建议每月手动跑一次 `update-geoip.sh`
+
+### 6.5 七牛图片返回 401 / 无法显示
 
 - 检查 `.env` 中的 `QINIU_PUBLIC_BASE_URL` 是否正确
 - 检查七牛空间是否为公开空间

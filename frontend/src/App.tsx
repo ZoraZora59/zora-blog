@@ -12,6 +12,7 @@ import LoginPage from '@/pages/Login';
 import SearchPage from '@/pages/Search';
 import TopicsPage from '@/pages/Topics';
 import TopicDetailPage from '@/pages/TopicDetail';
+import AdminAnalyticsPage from '@/pages/admin/Analytics';
 import AdminCommentsPage from '@/pages/admin/Comments';
 import AdminDashboardPage from '@/pages/admin/Dashboard';
 import AdminPostsPage from '@/pages/admin/Posts';
@@ -56,6 +57,7 @@ export default function App() {
                 )}
               >
                 <Route index element={<AdminDashboardPage />} />
+                <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="posts" element={<AdminPostsPage />} />
                 <Route path="posts/new" element={<AdminPostEditorPage />} />
                 <Route path="posts/:id/edit" element={<AdminPostEditorPage />} />

@@ -36,4 +36,8 @@ export const env = {
   qiniuBucket: getOptionalEnv('QINIU_BUCKET'),
   qiniuRootPrefix: process.env.QINIU_ROOT_PREFIX ?? '/zora_blog',
   qiniuPublicBaseUrl: getOptionalEnv('QINIU_PUBLIC_BASE_URL').replace(/\/$/, ''),
+  analyticsSalt: process.env.ANALYTICS_SALT ?? 'dev-analytics-salt-change-me-please-please-please',
+  analyticsPvRetentionDays: Number(process.env.ANALYTICS_PV_RETENTION_DAYS ?? 90),
+  maxmindDbPath: process.env.MAXMIND_DB_PATH ?? './data/GeoLite2-City.mmdb',
+  analyticsAggregateCron: process.env.ANALYTICS_AGGREGATE_CRON ?? '*/5 * * * *',
 };

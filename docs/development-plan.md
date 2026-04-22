@@ -11,17 +11,18 @@
 ## 总览
 
 ```
-M1 后端基础        ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░  独立可运行
-M2 前端基础        ░░░░░░░░████████░░░░░░░░░░░░░░░░░░░░  依赖 M1
-M3 B端管理         ░░░░░░░░████████░░░░░░░░░░░░░░░░░░░░  依赖 M1，与 M2 并行
-M4 评论系统        ░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░  依赖 M2+M3
-M5 专题系统        ░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░  依赖 M2+M3，与 M4 并行
-M6 扩展功能        ░░░░░░░░░░░░░░░░░░░░████░░░░░░░░░░░░  依赖 M2+M3
-M7 打磨            ░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░  依赖 M2-M6
-M8 部署            ░░░░░░░░░░░░░░░░░░░░░░░░░░░░████░░░░  依赖 M1-M7
+M1 后端基础        ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  独立可运行
+M2 前端基础        ░░░░░░░░████████░░░░░░░░░░░░░░░░░░░░░░░░  依赖 M1
+M3 B端管理         ░░░░░░░░████████░░░░░░░░░░░░░░░░░░░░░░░░  依赖 M1，与 M2 并行
+M4 评论系统        ░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░░░░░  依赖 M2+M3
+M5 专题系统        ░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░░░░░  依赖 M2+M3，与 M4 并行
+M6 扩展功能        ░░░░░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░  依赖 M2+M3
+M7 打磨            ░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░░░░░  依赖 M2-M6
+M8 部署            ░░░░░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░  依赖 M1-M7
+M9 数据分析        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████████  依赖 M8（线上有真实流量）
 ```
 
-**并行关系**：M2 与 M3 可并行；M4 与 M5 可并行。
+**并行关系**：M2 与 M3 可并行；M4 与 M5 可并行。M9 通常在 M8 部署上线后启动，但 M9.1（数据模型）和 M9.2（采集 API）可在 M8 之前提前完成。
 
 ---
 
@@ -415,38 +416,159 @@ curl -H 'Authorization: Bearer zora_xxxx' localhost:3001/api/admin/articles
 
 ---
 
-## M8 — 部署
+## M8 — 部署 ✅
 
 > 目标：博客上线运行在自有服务器上。
+> **状态**：已上线，访问 https://www.zorazora.cn 可用。
 
-### M8.1 服务端配置
+### M8.1 服务端配置 ✅
 
-- [ ] 服务器环境准备：Node.js 20+、PostgreSQL、Nginx
-- [ ] 后端以 Node.js 进程运行（使用 `pm2` 或 `systemd` 守护）
-- [ ] 前端构建为静态文件，Nginx 反向代理：
+- [x] 服务器环境准备：Node.js 20+、PostgreSQL、Nginx
+- [x] 后端以 Node.js 进程运行（使用 `pm2` 守护，配置见 [`deploy/ecosystem.config.js`](../deploy/ecosystem.config.js)）
+- [x] 前端构建为静态文件，Nginx 反向代理（配置见 [`deploy/nginx.conf`](../deploy/nginx.conf)）：
   - `/api/*` → 后端
-  - `/uploads/*` → 本地文件
   - 其余 → 前端静态文件（SPA fallback `index.html`）
-- [ ] HTTPS（Let's Encrypt / Certbot）
-- [ ] 环境变量配置：`.env` 生产版（DATABASE_URL、JWT_SECRET 等）
+- [x] HTTPS（宝塔面板 + Let's Encrypt）
+- [x] 环境变量配置：`.env` 生产版（DATABASE_URL、JWT_SECRET 等）
+- [x] **图片存储升级**：从本地磁盘 `uploads/` 改为七牛云对象存储（详见 commit `e4631fe`）
 
-### M8.2 CI/CD
+### M8.2 CI/CD ✅
 
-- [ ] GitHub Actions workflow：
+- [x] GitHub Actions workflow（`.github/workflows/`，commit `9c45fbb`）：
   - push to master → 类型检查 → 构建前端 → 构建后端 → 部署到服务器
-- [ ] 部署脚本：SSH → 拉代码 → 安装依赖 → 构建 → 迁移数据库 → 重启服务
-- [ ] 或使用 Docker Compose：
-  - `app`：Node.js 后端 + 前端静态文件
-  - `db`：PostgreSQL
-  - `nginx`：反向代理
+- [x] 部署脚本 [`deploy/deploy.sh`](../deploy/deploy.sh)：SSH → 拉代码 → 安装依赖 → 构建 → 迁移数据库 → 重启服务
 
-### M8.3 运维
+### M8.3 日志运维
 
-- [ ] 数据库备份策略（pg_dump 定时任务）
-- [ ] 日志收集（后端日志写文件 + logrotate）
-- [ ] 基本监控（进程存活检查 + 磁盘空间）
+> **范围说明（V1）**：仅做日志相关工作，**进程存活监控与数据库备份暂不纳入**。后续按需另立任务。
 
-**验收**：域名访问博客，HTTPS 正常，C 端和 B 端全功能可用
+- [x] **应用层访问日志**：[`backend/src/middleware/logger.ts`](../backend/src/middleware/logger.ts) 全局挂载 `requestLogger`，每个请求记录 `method + path + status + 耗时`
+- [x] **错误日志**：[`backend/src/middleware/error.ts:21`](../backend/src/middleware/error.ts) 用 `console.error` 输出未捕获错误
+- [x] **进程级日志持久化**：pm2 配置 `error_file` / `out_file` 写入 `/www/wwwlogs/zora-blog-backend.{error,out}.log`，带时间戳
+- [ ] **日志轮转**（需在生产服务器执行一次性配置）：
+  ```bash
+  pm2 install pm2-logrotate
+  pm2 set pm2-logrotate:max_size 10M
+  pm2 set pm2-logrotate:retain 7
+  pm2 set pm2-logrotate:compress true
+  ```
+
+**本地验证**：临时改 `backend/.env` 端口启动后，curl 多个端点可见以下输出（已验证 2026-04-22）：
+```
+Zora Blog API running at http://localhost:3099
+GET / -> 200 (1ms)
+GET /api/articles -> 200 (248ms)
+GET /api/admin/articles -> 401 (1ms)
+GET /non-exist-xyz -> 404 (0ms)
+```
+
+**生产验收**：登录服务器后 `tail -f /www/wwwlogs/zora-blog-backend.out.log` 应能看到实时访问日志。
+
+**整体验收**：域名 https://www.zorazora.cn 可访问，HTTPS 正常，C 端和 B 端全功能可用。
+
+---
+
+## M9 — 数据分析
+
+> 目标：自建轻量分析能力，覆盖 PRD §3.2.7 描述的"读者 / 内容 / 来源 / 时间"四类维度，零外部依赖、隐私友好。
+>
+> **详细技术设计见**：[`docs/analytics-design.md`](./analytics-design.md)
+>
+> **依赖**：M8 部署完成（有真实流量验证）。M9.1 和 M9.2 可在 M8 之前提前开发；M9.3 之后建议线上有数据后再上看板。
+
+### M9.1 数据模型与 Geo 库准备
+
+- [ ] 在 `prisma/schema.prisma` 新增模型：`PageView`、`DailySiteStat`、`DailyArticleStat`、`DailyReferrerStat`、`DailyGeoStat`、`DailyDeviceStat`、`DailyCategoryStat`，以及 `PageType`、`ReferrerType` 枚举（字段见 analytics-design.md §3）
+- [ ] 生成迁移：`npx prisma migrate dev --name analytics_init`
+- [ ] 注册 MaxMind 账号，下载 `GeoLite2-City.mmdb` 到 `backend/data/`
+- [ ] `.gitignore` 加入 `backend/data/*.mmdb`
+- [ ] 编写 `scripts/update-geoip.sh`：拉取最新 mmdb 并校验大小
+- [ ] 在 `backend/.env.example` 增加：`ANALYTICS_SALT`、`ANALYTICS_PV_RETENTION_DAYS`、`MAXMIND_DB_PATH`、`ANALYTICS_AGGREGATE_CRON`
+
+**验收**：`npx prisma studio` 可见全部分析表；`Reader.open(MAXMIND_DB_PATH)` 在后端启动时能成功加载
+
+### M9.2 后端采集 API
+
+- [ ] 安装依赖：`@maxmind/geoip2-node`、`ua-parser-js`、`node-cron`
+- [ ] 新增 `backend/src/lib/geoip.ts`：单例 Reader，提供 `lookup(ip)` 方法
+- [ ] 新增 `backend/src/lib/analytics.ts`：`hashIp(ip)`（HMAC-SHA256）、`classifyReferrer(referrer, selfHost)`、`parsePagePath(path)` 等工具
+- [ ] 新增 `backend/src/services/analytics-service.ts`：`recordPageView(payload, ctx)`，处理 bot 过滤 / UA 解析 / Geo 解析 / 业务关联 / 写库
+- [ ] 新增 `backend/src/routes/track.ts`：`POST /api/track/pageview`，接受 `TrackPayload`，返回 204
+- [ ] 接入限流中间件：基于 IP 的令牌桶（60 req/min/IP），新增 `backend/src/middleware/rate-limit.ts`
+- [ ] Bot UA 黑名单：维护 `backend/src/lib/bot-ua-list.ts`（bot/spider/crawler/curl/wget/headless/preview 等）
+
+**验收**：
+```bash
+curl -X POST localhost:3001/api/track/pageview \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"/articles/hello","visitorId":"u1","sessionId":"s1","referrer":"","screenWidth":1920,"screenHeight":1080,"viewportWidth":1440,"language":"zh-CN"}'
+# → 204
+# 数据库 page_views 表新增一行，geo / device 字段已解析
+```
+
+### M9.3 聚合任务
+
+- [ ] 新增 `backend/src/jobs/analytics-aggregator.ts`：实现 site / article / referrer / geo / device / category 六个维度的增量聚合 SQL（见 analytics-design.md §6.2）
+- [ ] 在 `backend/src/index.ts` 启动时通过 `node-cron` 注册任务（默认 `*/5 * * * *`）
+- [ ] 历史回填脚本：`backend/scripts/rebuild-analytics.ts`，支持 `--from` `--to` 参数
+- [ ] 数据保留任务：每天 03:00 删除 `page_views` 中 `created_at < now() - ANALYTICS_PV_RETENTION_DAYS` 的数据
+- [ ] 聚合失败告警：连续 3 次失败时 `console.error` 输出明显标记（生产可对接监控）
+
+**验收**：手动写入 100 条 page_views → 触发聚合 → `daily_site_stats` 等表数据正确；运行回填脚本可重新生成历史聚合
+
+### M9.4 查询 API
+
+- [ ] 新增 `backend/src/routes/analytics.ts`，挂在 `/api/admin/analytics/*` 下，统一应用管理员认证中间件
+- [ ] 实现 13 个端点（清单见 analytics-design.md §7.2）：
+  - `overview` / `timeline` / `articles` / `articles/:id` / `categories` / `topics` / `sources` / `utm` / `entry-pages` / `geo` / `devices` / `visitors` / `publish-time`
+- [ ] 通用查询参数解析：`range` / `from` / `to` / `compare` / `limit`，封装为 `parseAnalyticsRange()` 工具
+- [ ] 同比/环比逻辑：当 `compare=true` 时，自动查询上一周期数据并计算 delta 百分比
+- [ ] SDK 同步：`packages/sdk/` 新增 `analytics.*` 方法
+
+**验收**：每个端点 curl 可返回正确结构；`overview?range=30d&compare=true` 同比百分比计算准确
+
+### M9.5 前端埋点 SDK
+
+- [ ] 新增 `frontend/src/lib/analytics.ts`：导出 `initAnalytics()` 与 `trackPageView()` 函数
+  - 实现 visitorId 持久化（localStorage `zb_vid`）
+  - 实现 sessionId 30 分钟无活动重生（sessionStorage `zb_sid` + `zb_sid_last_active`）
+  - 实现 5 秒去重（同一 path 短时多次只发一次）
+  - 实现 DNT 检测、`isAdmin` 标记
+  - 上报使用 `navigator.sendBeacon`，回落 `fetch(..., { keepalive: true })`
+  - 解析 UTM 参数自 `location.search`
+- [ ] 新增 `frontend/src/hooks/useAnalytics.ts`：监听 `useLocation()` 路径变化触发上报
+- [ ] 在 C 端 Layout（`CLayout.tsx`）顶层挂载一次 `useAnalytics()`
+- [ ] 排除规则：`/admin/*`、`/login` 路径不上报
+- [ ] 在「关于」页底部增加一段「隐私说明」文案
+
+**验收**：C 端访问首页 / 文章页时，浏览器 Network 面板可见 `/api/track/pageview` 204；管理员登录后访问 C 端时，`isAdmin` 字段为 true
+
+### M9.6 前端分析面板
+
+- [ ] 安装：`react-simple-maps`（世界地图）、`topojson-client`、`d3-geo`（如未安装）
+- [ ] 新增 `frontend/src/pages/admin/Analytics.tsx`，路由 `/admin/analytics`
+- [ ] B 端侧边栏「Dashboard」之下新增「Analytics」入口
+- [ ] 顶部组件：`<TimeRangeFilter />`（today / 7d / 30d / 90d / 自定义）+ 「数据更新于 X 分钟前」提示
+- [ ] Tab 容器：总览 / 内容 / 来源 / 地域 / 设备 / 时间
+  - **总览**：4 张大数字卡 + PV/UV 折线图（recharts `LineChart`）+ 同比环比
+  - **内容**：热门文章 Top 10 表格 + 分类柱状图 + 长尾文章列表 + 单文章生命周期曲线
+  - **来源**：referrerType 饼图 + Top 10 host 表格 + UTM 渠道表 + 入口页面 Top 10
+  - **地域**：世界地图（react-simple-maps）+ Top 10 国家 / 省份表
+  - **设备**：device / os / browser 三个饼图 + 屏幕宽度直方图
+  - **时间**：7×24 周内热力图（自实现 grid + Tailwind）+ 发布时段散点图
+- [ ] 通用：skeleton 加载、空状态、`Intl.NumberFormat` 千分位
+- [ ] 表格行可点击跳转文章详情 / 分类详情
+
+**验收**：六个 Tab 全部能正确渲染；切换时间范围数据实时变化；世界地图悬停显示国家名 + PV
+
+### M9.7 部署与运维补充
+
+- [ ] 更新 `docs/deploy-guide.md`：补充 mmdb 下载步骤、`ANALYTICS_SALT` 生成、cron 验证
+- [ ] 部署脚本（`deploy/deploy.sh`）增加 mmdb 文件检查与下载逻辑
+- [ ] CI 增加：mmdb 文件年龄检查（>45 天告警）
+- [ ] README 增加分析模块章节，链接到 analytics-design.md
+
+**验收**：生产环境 `/admin/analytics` 看板有真实数据；mmdb 文件最新；cron 任务正常运行
 
 ---
 
@@ -470,4 +592,16 @@ npm install react-router-dom react-markdown remark-gfm rehype-shiki shiki react-
 
 # 现有依赖（已安装）
 # react, react-dom, lucide-react, motion, tailwindcss, vite, typescript
+```
+
+### M9 新增依赖
+
+```bash
+# 后端
+cd backend && npm install @maxmind/geoip2-node ua-parser-js node-cron
+cd backend && npm install -D @types/node-cron
+
+# 前端
+cd frontend && npm install react-simple-maps topojson-client d3-geo
+cd frontend && npm install -D @types/react-simple-maps @types/d3-geo @types/topojson-client
 ```

@@ -139,6 +139,21 @@ export default function AboutPage() {
             </div>
           </section>
         ) : null}
+
+        <section className="space-y-3 rounded-xl bg-surface-sunken px-6 py-5 text-sm leading-relaxed text-muted">
+          <p className="text-xs font-medium uppercase tracking-[0.24em] text-subtle">Privacy</p>
+          <h2 className="text-base font-medium text-foreground">关于流量统计</h2>
+          <p>
+            为了了解读者偏好与改进选题，本站会自建轻量的访问统计。我们的隐私承诺：
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>不投放任何 cookie，访客标识使用浏览器 localStorage 中的随机 UUID。</li>
+            <li>IP 地址仅做哈希后存储，原始 IP 立即丢弃；地理信息使用 MaxMind GeoLite2 离线数据库解析。</li>
+            <li>不接入任何第三方分析 SDK，所有数据仅存储在本站自有服务器。</li>
+            <li>尊重浏览器 <code>Do Not Track</code> 信号，启用时不上报任何数据。</li>
+            <li>不采集表单内容、键盘输入、鼠标点击坐标或任何可识别个人身份的信息。</li>
+          </ul>
+        </section>
       </div>
     </div>
   );

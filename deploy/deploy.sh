@@ -64,6 +64,8 @@ sync_code() {
     --exclude '.env' \
     --exclude 'dist' \
     --exclude 'uploads/*' \
+    --exclude 'data/*.mmdb' \
+    --exclude 'data/*.tar.gz' \
     "$REPO_DIR/backend/" "$BACKEND_DIR/"
 
   # 同步前端
@@ -145,6 +147,25 @@ reload_nginx() {
   log "Nginx 重载完成"
 }
 
+# 检查 MaxMind GeoLite2 数据库（M9 数据分析依赖）
+check_geoip_db() {
+  local mmdb="$BACKEND_DIR/data/GeoLite2-City.mmdb"
+  if [ ! -f "$mmdb" ]; then
+    warn "未发现 GeoLite2-City.mmdb，地理分析将为空"
+    warn "如需启用，请运行: MAXMIND_LICENSE_KEY=xxx ./scripts/update-geoip.sh"
+    return 0
+  fi
+
+  # 文件超过 45 天提醒更新
+  if find "$mmdb" -mtime +45 | grep -q .; then
+    warn "GeoLite2 数据库已超过 45 天未更新，建议运行 ./scripts/update-geoip.sh"
+  fi
+
+  local size
+  size=$(stat -f%z "$mmdb" 2>/dev/null || stat -c%s "$mmdb")
+  log "GeoLite2 数据库就绪（$((size / 1024 / 1024)) MB）"
+}
+
 # 主流程
 main() {
   log "========== 开始部署 Zora Blog =========="
@@ -156,6 +177,7 @@ main() {
   build_project
   migrate_database
   migrate_legacy_media
+  check_geoip_db
   restart_service
   reload_nginx
 
