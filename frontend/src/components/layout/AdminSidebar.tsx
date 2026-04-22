@@ -33,7 +33,7 @@ export default function AdminSidebar() {
   };
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-border/60 bg-surface-raised lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-surface-raised lg:flex">
       <div className="flex items-center gap-3 px-6 py-6">
         <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-white font-heading font-bold">
           Z
