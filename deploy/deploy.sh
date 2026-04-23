@@ -148,14 +148,26 @@ reload_nginx() {
   log "同步 Nginx 配置..."
 
   local src="$DEPLOY_DIR/deploy/nginx.conf"
-  local dst="/www/server/panel/vhost/nginx/www.zorazora.cn.conf"
-  local backup="/www/server/panel/vhost/nginx/www.zorazora.cn.conf.bak"
+  local vhost_dir="/www/server/panel/vhost/nginx"
+  local dst="$vhost_dir/www.zorazora.cn.conf"
+  local backup="$vhost_dir/www.zorazora.cn.conf.bak"
 
   if [ ! -f "$src" ]; then
     warn "未找到 $src，跳过 nginx 配置同步"
     nginx -t && nginx -s reload
     return 0
   fi
+
+  # 宝塔默认会根据站点类型生成 html_<domain>.conf，里面带 `expires 12h` 且声明相同
+  # server_name，按字母顺序排在我们的 www.zorazora.cn.conf 之前被 nginx 加载，导致
+  # 我们自定义的缓存/安全头被忽略（"conflicting server name ... ignored"）。
+  # 统一把这些冲突文件改名为 .disabled，nginx 的 include *.conf 就不会再匹配到它们。
+  for conflict in "$vhost_dir/html_www.zorazora.cn.conf" "$vhost_dir/html_zorazora.cn.conf"; do
+    if [ -f "$conflict" ]; then
+      warn "禁用冲突 vhost: $conflict"
+      mv -f "$conflict" "$conflict.disabled"
+    fi
+  done
 
   # 备份当前线上配置
   if [ -f "$dst" ]; then
@@ -183,15 +195,6 @@ reload_nginx() {
   log "重载 Nginx 配置..."
   nginx -s reload
   log "Nginx 重载完成"
-
-  # 诊断：打印所有声明了 zorazora.cn server_name 的 vhost 配置
-  log "--- 诊断 vhost 冲突源 ---"
-  grep -l 'zorazora\.cn' /www/server/panel/vhost/nginx/*.conf 2>/dev/null | while read -r f; do
-    log "vhost: $f"
-    grep -nE 'server_name|listen|root|cache-control|expires' "$f" | head -15 || true
-  done
-  log "--- 当前 /assets/* 响应头 ---"
-  curl -sI -o /dev/null -D - "https://www.zorazora.cn/robots.txt" 2>/dev/null | head -10 || true
 }
 
 # 检查 MaxMind GeoLite2 数据库（M9 数据分析依赖）
