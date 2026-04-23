@@ -140,10 +140,48 @@ restart_service() {
   log "服务重启完成"
 }
 
-# 重载 Nginx
+# 同步并重载 Nginx 配置
+# - 把仓库内的 deploy/nginx.conf 覆盖到宝塔 vhost 路径
+# - 如果线上 nginx 未编译 ngx_brotli 模块，自动去除 brotli 指令后再 reload
+# - nginx -t 失败时回滚到备份，避免 reload 把站点搞挂
 reload_nginx() {
+  log "同步 Nginx 配置..."
+
+  local src="$DEPLOY_DIR/deploy/nginx.conf"
+  local dst="/www/server/panel/vhost/nginx/www.zorazora.cn.conf"
+  local backup="/www/server/panel/vhost/nginx/www.zorazora.cn.conf.bak"
+
+  if [ ! -f "$src" ]; then
+    warn "未找到 $src，跳过 nginx 配置同步"
+    nginx -t && nginx -s reload
+    return 0
+  fi
+
+  # 备份当前线上配置
+  if [ -f "$dst" ]; then
+    cp -f "$dst" "$backup"
+  fi
+
+  cp -f "$src" "$dst"
+
+  # 探测 brotli 模块是否可用；不可用时把 brotli* 指令注释掉，保证 nginx -t 能过
+  if ! nginx -V 2>&1 | grep -q 'brotli'; then
+    warn "nginx 未编译 ngx_brotli，暂时注释 brotli 指令"
+    sed -i -E 's/^(\s*brotli[[:alnum:]_]*\s+.*;)/# \1/' "$dst"
+  fi
+
+  log "校验 Nginx 配置..."
+  if ! nginx -t; then
+    error_msg="nginx -t 失败，回滚配置"
+    if [ -f "$backup" ]; then
+      cp -f "$backup" "$dst"
+      nginx -t
+    fi
+    error "$error_msg"
+  fi
+
   log "重载 Nginx 配置..."
-  nginx -t && nginx -s reload
+  nginx -s reload
   log "Nginx 重载完成"
 }
 
