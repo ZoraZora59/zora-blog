@@ -101,7 +101,8 @@ build_project() {
 
   log "构建前端..."
   cd "$FRONTEND_DIR"
-  npm run build
+  # prerender 走内网回环直连后端，避免构建时 nginx 正在 reload/配置不一致导致 502
+  PRERENDER_API_BASE="http://127.0.0.1:3001" npm run build
 
   log "构建完成"
 }
