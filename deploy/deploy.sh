@@ -183,6 +183,15 @@ reload_nginx() {
   log "重载 Nginx 配置..."
   nginx -s reload
   log "Nginx 重载完成"
+
+  # 诊断：打印所有声明了 zorazora.cn server_name 的 vhost 配置
+  log "--- 诊断 vhost 冲突源 ---"
+  grep -l 'zorazora\.cn' /www/server/panel/vhost/nginx/*.conf 2>/dev/null | while read -r f; do
+    log "vhost: $f"
+    grep -nE 'server_name|listen|root|cache-control|expires' "$f" | head -15 || true
+  done
+  log "--- 当前 /assets/* 响应头 ---"
+  curl -sI -o /dev/null -D - "https://www.zorazora.cn/robots.txt" 2>/dev/null | head -10 || true
 }
 
 # 检查 MaxMind GeoLite2 数据库（M9 数据分析依赖）
