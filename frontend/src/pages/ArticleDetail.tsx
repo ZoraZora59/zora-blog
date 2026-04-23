@@ -145,10 +145,7 @@ export default function ArticleDetailPage() {
                     alt={article.author.displayName}
                     className="size-14 rounded-full object-cover"
                     referrerPolicy="no-referrer"
-                    src={
-                      resolveMediaUrl(article.author.avatar) ||
-                      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80'
-                    }
+                    src={resolveMediaUrl(article.author.avatar) || undefined}
                   />
                   <div className="space-y-1">
                     <p className="font-medium text-foreground">{article.author.displayName}</p>

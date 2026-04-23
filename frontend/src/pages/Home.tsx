@@ -20,10 +20,7 @@ const DEFAULT_HERO = {
   primaryHref: '#latest-dispatch',
   secondaryText: '查看专题',
   secondaryHref: '/topics',
-  images: [
-    'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1200&q=80',
-  ],
+  images: [] as string[],
 };
 
 function renderMultilineTitle(text: string) {

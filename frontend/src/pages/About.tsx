@@ -6,9 +6,6 @@ import { useSiteInfo } from '@/hooks/useSiteInfo';
 import { useTheme } from '@/hooks/useTheme';
 import { resolveMediaUrl } from '@/lib/api';
 
-const fallbackAvatar =
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=320&q=80';
-
 export default function AboutPage() {
   const { siteInfo, isLoading, error } = useSiteInfo();
   const { resolvedTheme } = useTheme();
@@ -65,7 +62,7 @@ export default function AboutPage() {
               alt={displayName}
               className="size-28 rounded-full object-cover shadow-sm"
               referrerPolicy="no-referrer"
-              src={resolveMediaUrl(admin?.avatar) || fallbackAvatar}
+              src={resolveMediaUrl(admin?.avatar) || undefined}
             />
             <div className="space-y-4">
               <div className="space-y-2">

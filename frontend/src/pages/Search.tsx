@@ -301,10 +301,7 @@ export default function SearchPage() {
                         className="aspect-[16/10] w-full object-cover"
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        src={
-                          resolveMediaUrl(item.coverImage) ||
-                          'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80'
-                        }
+                        src={resolveMediaUrl(item.coverImage) || undefined}
                       />
                     </div>
 

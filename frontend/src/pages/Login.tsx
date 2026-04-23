@@ -56,16 +56,10 @@ export default function Login() {
     <div className="grid min-h-screen grid-cols-1 bg-surface lg:grid-cols-2">
       <motion.section
         animate={{ opacity: 1, x: 0 }}
-        className="relative hidden overflow-hidden bg-primary text-white lg:flex lg:flex-col lg:justify-between"
+        className="relative hidden overflow-hidden bg-gradient-to-br from-primary via-primary to-secondary text-white lg:flex lg:flex-col lg:justify-between"
         initial={{ opacity: 0, x: -24 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
       >
-        <img
-          alt="露营营地"
-          className="absolute inset-0 size-full object-cover opacity-40"
-          referrerPolicy="no-referrer"
-          src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80"
-        />
         <div className="relative z-10 flex flex-col gap-6 p-12">
           <span className="w-fit rounded-full bg-white/15 px-4 py-1 text-xs font-medium uppercase tracking-[0.24em]">
             Zora Admin
