@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 
+// override 必须为 false：否则 pm2/ecosystem/部署平台注入的 env（如 PORT=3001）
+// 会被本地 .env 里的陈旧值（PORT=24393）强制覆盖，导致生产监听错端口 → nginx 502。
 dotenv.config({
   path: '.env',
-  override: true,
+  override: false,
   quiet: true,
 });
 
