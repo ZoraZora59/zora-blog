@@ -131,12 +131,14 @@ migrate_legacy_media() {
 }
 
 # 重启服务
+# 用 startOrReload 替代 pm2 restart：
+# - pm2 restart 不会重新加载 ecosystem.config.js 里 env_production 定义的 PORT
+# - .env 里的 PORT=24393 会盖过 ecosystem 的 PORT=3001，导致后端监听错端口，nginx upstream 502
+# startOrReload + --env production --update-env 强制按 ecosystem 的 env_production 块重新注入
 restart_service() {
   log "重启后端服务..."
-  pm2 restart zora-blog-backend 2>/dev/null || {
-    warn "服务未运行，启动新服务..."
-    pm2 start /www/wwwroot/zora-blog/deploy/ecosystem.config.js --env production
-  }
+  pm2 startOrReload /www/wwwroot/zora-blog/deploy/ecosystem.config.js \
+    --env production --update-env
   pm2 save
   log "服务重启完成"
 }
