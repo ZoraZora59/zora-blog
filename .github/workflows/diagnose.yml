@@ -1,0 +1,38 @@
+name: Diagnose Backend (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: Collect pm2 state and backend logs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Run diagnostics via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          script_stop: false
+          script: |
+            echo '=== pm2 list ==='
+            pm2 list || true
+            echo '=== pm2 describe zora-blog-backend ==='
+            pm2 describe zora-blog-backend || true
+            echo '=== pm2 logs (last 100 lines, no stream) ==='
+            pm2 logs zora-blog-backend --lines 100 --nostream || true
+            echo '=== listen on 3001 ==='
+            ss -lntp 2>/dev/null | grep 3001 || netstat -lntp 2>/dev/null | grep 3001 || true
+            echo '=== curl 127.0.0.1:3001 ==='
+            curl -sI http://127.0.0.1:3001/api/articles?limit=1 || true
+            curl -s -o /dev/null -w 'status=%{http_code} time=%{time_total}\n' http://127.0.0.1:3001/api/articles?limit=1 || true
+            echo '=== backend .env keys (masked) ==='
+            grep -E '^[A-Z_]+=' /www/wwwroot/zora-blog/backend/.env 2>/dev/null | awk -F= '{print $1}' || true
+            echo '=== ecosystem.config.js ==='
+            cat /www/wwwroot/zora-blog/deploy/ecosystem.config.js 2>/dev/null || true
+            echo '=== backend dist exists? ==='
+            ls -la /www/wwwroot/zora-blog/backend/dist/ 2>/dev/null | head -10 || true
