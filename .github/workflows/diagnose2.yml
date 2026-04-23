@@ -1,0 +1,30 @@
+name: Diagnose Backend v2 (manual)
+on:
+  workflow_dispatch:
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          script_stop: false
+          script: |
+            echo '=== pm2 jlist (env snapshot) ==='
+            pm2 jlist | head -200 || true
+            echo '=== ss listen ==='
+            (ss -lntp 2>/dev/null || netstat -lntp 2>/dev/null) | grep -E '3001|24393|node' || true
+            echo '=== last 30 lines of out log ==='
+            tail -30 /www/wwwlogs/zora-blog-backend.out.log 2>/dev/null || true
+            echo '=== .env PORT value ==='
+            grep -E '^PORT=' /www/wwwroot/zora-blog/backend/.env 2>/dev/null || echo '(no PORT in .env)'
+            echo '=== force startOrReload now ==='
+            pm2 delete zora-blog-backend 2>/dev/null || true
+            pm2 start /www/wwwroot/zora-blog/deploy/ecosystem.config.js --env production --update-env
+            sleep 3
+            pm2 save
+            (ss -lntp 2>/dev/null || netstat -lntp 2>/dev/null) | grep -E '3001' || echo '(still not on 3001)'
+            curl -s -o /dev/null -w 'localhost:3001 => %{http_code}\n' http://127.0.0.1:3001/api/articles?limit=1 || true
