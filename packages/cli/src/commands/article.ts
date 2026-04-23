@@ -207,7 +207,8 @@ export function createArticleCommand(): Command {
           error(`未找到：${idOrSlug}`);
           process.exit(1);
         }
-        const fm = {
+        const fm = Object.fromEntries(
+          Object.entries({
           title: article.title,
           slug: article.slug,
           category: article.category.slug,
@@ -215,7 +216,8 @@ export function createArticleCommand(): Command {
           status: article.status,
           cover: article.coverImage ?? undefined,
           excerpt: article.excerpt ?? undefined,
-        };
+          }).filter(([, value]) => value !== undefined),
+        );
         const md = stringifyFrontmatter(fm, article.content);
         await mkdir(options.out, { recursive: true });
         const file = path.join(options.out, `${article.slug}.md`);
