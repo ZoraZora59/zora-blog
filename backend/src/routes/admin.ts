@@ -15,6 +15,7 @@ import {
   createTag,
   deleteTag,
   listAdminTags,
+  mergeTags,
   updateTag,
 } from '../services/tag-service.js';
 import {
@@ -411,6 +412,19 @@ adminRoutes.delete('/tags/:id', async (c) => {
   const id = parseIdParam(c.req.param('id'));
   await deleteTag(id);
   return success(c, null, '标签删除成功');
+});
+
+adminRoutes.post('/tags/merge', async (c) => {
+  const body = await c.req.json<{ sourceId?: number; targetId?: number }>().catch(() => {
+    throw new AppError('请求体必须是 JSON');
+  });
+
+  if (!body.sourceId || !body.targetId) {
+    throw new AppError('sourceId 和 targetId 为必填');
+  }
+
+  const result = await mergeTags(body.sourceId, body.targetId);
+  return success(c, result, '标签合并成功');
 });
 
 adminRoutes.post('/upload', async (c) => {
