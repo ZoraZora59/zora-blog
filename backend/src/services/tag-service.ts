@@ -156,3 +156,59 @@ export async function resolveTagIds(inputTagIds?: number[], tagNames?: string[])
 
   return Array.from(resolvedIds);
 }
+
+export interface MergeTagsResult {
+  sourceId: number;
+  targetId: number;
+  migratedCount: number;
+}
+
+export async function mergeTags(sourceId: number, targetId: number): Promise<MergeTagsResult> {
+  if (sourceId === targetId) {
+    throw new AppError('不能合并相同的标签');
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const source = await tx.tag.findUnique({ where: { id: sourceId } });
+    if (!source) {
+      throw new AppError('源标签不存在', 404);
+    }
+
+    const target = await tx.tag.findUnique({ where: { id: targetId } });
+    if (!target) {
+      throw new AppError('目标标签不存在', 404);
+    }
+
+    const sourceArticles = await tx.articleTag.findMany({
+      where: { tagId: sourceId },
+      select: { articleId: true },
+    });
+
+    const targetArticles = await tx.articleTag.findMany({
+      where: { tagId: targetId },
+      select: { articleId: true },
+    });
+
+    const targetArticleIds = new Set(targetArticles.map((a: { articleId: number }) => a.articleId));
+    const overlapping = sourceArticles.filter((a: { articleId: number }) => targetArticleIds.has(a.articleId));
+
+    if (overlapping.length > 0) {
+      await tx.articleTag.deleteMany({
+        where: { tagId: sourceId, articleId: { in: overlapping.map((a: { articleId: number }) => a.articleId) } },
+      });
+    }
+
+    const migrated = await tx.articleTag.updateMany({
+      where: { tagId: sourceId },
+      data: { tagId: targetId },
+    });
+
+    await tx.tag.delete({ where: { id: sourceId } });
+
+    return {
+      sourceId,
+      targetId,
+      migratedCount: migrated.count,
+    };
+  });
+}
