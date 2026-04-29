@@ -138,6 +138,12 @@ export interface TagInput {
   slug?: string;
 }
 
+export interface TagMergeResult {
+  sourceId: number;
+  targetId: number;
+  migratedCount: number;
+}
+
 // ============ 专题 ============
 export interface Topic {
   id: number;

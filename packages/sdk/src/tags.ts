@@ -1,5 +1,5 @@
 import type { ZoraClient } from "./client.js";
-import type { Tag, TagInput } from "./types.js";
+import type { Tag, TagInput, TagMergeResult } from "./types.js";
 
 export class TagsApi {
   constructor(private readonly client: ZoraClient) {}
@@ -18,5 +18,9 @@ export class TagsApi {
 
   delete(id: number): Promise<void> {
     return this.client.delete<void>(`/admin/tags/${id}`);
+  }
+
+  merge(sourceId: number, targetId: number): Promise<TagMergeResult> {
+    return this.client.post<TagMergeResult>("/admin/tags/merge", { sourceId, targetId });
   }
 }
