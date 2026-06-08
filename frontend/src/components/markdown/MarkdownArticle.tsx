@@ -4,11 +4,33 @@ import { isValidElement } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeBlock from '@/components/markdown/CodeBlock';
+import MarkdownImage from '@/components/markdown/MarkdownImage';
 import { extractTextFromNode, parseEmbedDirective } from '@/lib/markdown';
 
 interface MarkdownArticleProps {
   content: string;
   theme: 'light' | 'dark';
+}
+
+// 段落是否只包裹了一张图片。react-markdown 默认会把独立成行的图片塞进 <p>，
+// 而图片组件的灯箱是 <div>，<div> 不能嵌套在 <p> 里 —— 这种段落要直接展开、不加 <p>。
+function isImageOnlyParagraph(node: unknown): boolean {
+  if (!node || typeof node !== 'object' || !('children' in node)) {
+    return false;
+  }
+  const children = (node as { children?: unknown[] }).children;
+  if (!Array.isArray(children)) {
+    return false;
+  }
+  const meaningful = children.filter((child) => {
+    const item = child as { type?: string; value?: string };
+    return !(item.type === 'text' && (item.value ?? '').trim() === '');
+  });
+  if (meaningful.length !== 1) {
+    return false;
+  }
+  const only = meaningful[0] as { type?: string; tagName?: string };
+  return only.type === 'element' && only.tagName === 'img';
 }
 
 function EmbeddedVideo({ type, id }: { type: 'youtube' | 'bilibili'; id: string }) {
@@ -57,7 +79,11 @@ export default function MarkdownArticle({ content, theme }: MarkdownArticleProps
           renderHeading(3, children, 'mt-8 mb-4 text-xl font-heading font-semibold text-foreground'),
         h4: ({ children }) =>
           renderHeading(4, children, 'mt-6 mb-3 text-lg font-semibold text-foreground'),
-        p: ({ children }) => {
+        p: ({ children, node }) => {
+          if (isImageOnlyParagraph(node)) {
+            return <>{children}</>;
+          }
+
           const text = extractTextFromNode(children).trim();
           const embed = parseEmbedDirective(text);
 
@@ -108,14 +134,7 @@ export default function MarkdownArticle({ content, theme }: MarkdownArticleProps
         ),
         th: ({ children }) => <th className="px-4 py-3">{children}</th>,
         td: ({ children }) => <td className="px-4 py-3 text-foreground">{children}</td>,
-        img: ({ alt, src }) => (
-          <img
-            alt={alt || ''}
-            className="w-full rounded-xl object-cover shadow-sm"
-            referrerPolicy="no-referrer"
-            src={src}
-          />
-        ),
+        img: ({ alt, src }) => <MarkdownImage alt={alt} src={typeof src === 'string' ? src : undefined} />,
         pre: ({ children }) => {
           const child = Array.isArray(children) ? children[0] : children;
 
